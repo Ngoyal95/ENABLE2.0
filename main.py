@@ -1,7 +1,7 @@
 #! python3
 
 #Revision 7/5/17
-from PyQt5.QtWidgets import QDate, QProgressBar, QDialog, QTableWidget, QFileDialog, QHBoxLayout, QVBoxLayout, QTextEdit, QAction, qApp, QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QDesktopWidget, QMainWindow
+from PyQt5.QtWidgets import QProgressBar, QDialog, QTableWidget, QFileDialog, QHBoxLayout, QVBoxLayout, QTextEdit, QAction, qApp, QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QDesktopWidget, QMainWindow
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5 import QtCore
 
@@ -152,7 +152,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.settings() #initialize user settings
         self.operatingMode(1) #default to Export mode, self.opMode stores operating mode state (1 == export, 0 == consult)
         self.setWindowIcon(QtGui.QIcon('../icons/enable_icon.png'))
-        self.consultDate.setCurrentDate(QDate.currentDate())
+        self.consultDate.setDate(QtCore.QDate.currentDate())
 
 
         #### BUTTON FUNCTIONS ####
