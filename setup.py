@@ -15,7 +15,7 @@ options = {
     'build_exe': {
         'include_files':[
             os.path.join(PYTHON_INSTALL_DIR, 'DLLs', 'tk86t.dll'),
-            os.path.join(PYTHON_INSTALL_DIR, 'DLLs', 'tcl86t.dll'),'RECISTForm.docx','readme.txt','icons/'],
+            os.path.join(PYTHON_INSTALL_DIR, 'DLLs', 'tcl86t.dll'),'RECISTForm.docx','../readme.txt','../icons/'],
     'packages': ['pyqtgraph','PyQt5','pandas','numpy','easygui','openpyxl','docx','lxml._elementpath','dbm']
     }
 }
