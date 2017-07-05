@@ -1,7 +1,7 @@
 #! python3
 
 #Revision 7/5/17
-from PyQt5.QtWidgets import QDialog, QTableWidget, QFileDialog, QHBoxLayout, QVBoxLayout, QTextEdit, QAction, qApp, QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QDesktopWidget, QMainWindow
+from PyQt5.QtWidgets import QDate, QProgressBar, QDialog, QTableWidget, QFileDialog, QHBoxLayout, QVBoxLayout, QTextEdit, QAction, qApp, QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QDesktopWidget, QMainWindow
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5 import QtCore
 
@@ -151,17 +151,23 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         #### INITIALIZATION ####
         self.settings() #initialize user settings
         self.operatingMode(1) #default to Export mode, self.opMode stores operating mode state (1 == export, 0 == consult)
+        self.setWindowIcon(QtGui.QIcon('../icons/enable_icon.png'))
+        self.consultDate.setCurrentDate(QDate.currentDate())
+
 
         #### BUTTON FUNCTIONS ####
         self.importPatients.clicked.connect(self.importBookmarks)
         self.removePatients.clicked.connect(self.clearBookmarks)
-        self.configureButton.clicked.connect(self.configProg)
+        
         self.recistCalc.clicked.connect(self.recistCalculations)
         self.generateRECIST.clicked.connect(self.genRECIST)
         self.generateSpreadsheets.clicked.connect(self.genSpreadsheets)
         self.removePatient.clicked.connect(self.removeSelectedPatient)
         self.includePatient.clicked.connect(self.includeSelectedPatient)
         self.exportPlotData.clicked.connect(self.EPD)
+
+        self.configureButton.clicked.connect(self.configProg)
+        self.configureButton.setIcon(QtGui.QIcon('../icons/configIcon.png'))
 
         #### LAUNCH SECONDARY DIALOGS ####
         self.modExamDates.clicked.connect(self.launchExamSelect)
@@ -310,7 +316,8 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             flag = 1 #no imports
 
         if flag == 0:
-            BLImport(self.df,self.StudyRoot,self.dirName,self.baseNames)
+            #for self.file in self.baseNames:
+            BLImport(self.df,self.StudyRoot,self.dirName,self.baseNames) #send one patient at a time, adding them to the StudyRoot one at a time
             QMessageBox.information(self,'Message','Bookmark List(s) successfully imported.')
             self.statusbar.showMessage('Done importing Bookmark List(s)', 1000)
             
@@ -400,8 +407,10 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         #sets program to operate in Export or Consultation mode
         if mode == 1:
             self.statusbar.showMessage("Operating Mode: Export")
+            self.consultFrame.setEnabled(False)
         elif mode == 0:
             self.statusbar.showMessage("Operating Mode: Consultation")
+            self.consultFrame.setEnabled(True)
         self.opMode = mode
 
     def launchDbUploadDialog(self):
