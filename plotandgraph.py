@@ -1,0 +1,95 @@
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file 'plotsandgraphing.ui'
+#
+# Created by: PyQt5 UI code generator 5.8.2
+#
+# WARNING! All changes made in this file will be lost!
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+class Ui_plotAndGraphUtility(object):
+    def setupUi(self, plotAndGraphUtility):
+        plotAndGraphUtility.setObjectName("plotAndGraphUtility")
+        plotAndGraphUtility.resize(1256, 637)
+        self.groupBox = QtWidgets.QGroupBox(plotAndGraphUtility)
+        self.groupBox.setGeometry(QtCore.QRect(640, 40, 581, 531))
+        self.groupBox.setObjectName("groupBox")
+        self.graphicsView = PlotWidget(self.groupBox)
+        self.graphicsView.setGeometry(QtCore.QRect(10, 20, 561, 501))
+        self.graphicsView.setObjectName("graphicsView")
+        self.tabWidget = QtWidgets.QTabWidget(plotAndGraphUtility)
+        self.tabWidget.setGeometry(QtCore.QRect(30, 30, 581, 541))
+        self.tabWidget.setObjectName("tabWidget")
+        self.tab = QtWidgets.QWidget()
+        self.tab.setObjectName("tab")
+        self.patientList = QtWidgets.QListWidget(self.tab)
+        self.patientList.setGeometry(QtCore.QRect(30, 40, 256, 450))
+        self.patientList.setObjectName("patientList")
+        self.label_2 = QtWidgets.QLabel(self.tab)
+        self.label_2.setGeometry(QtCore.QRect(30, 20, 141, 16))
+        self.label_2.setObjectName("label_2")
+        self.tabWidget.addTab(self.tab, "")
+        self.tab_2 = QtWidgets.QWidget()
+        self.tab_2.setObjectName("tab_2")
+        self.cohortList = QtWidgets.QListWidget(self.tab_2)
+        self.cohortList.setGeometry(QtCore.QRect(30, 40, 256, 450))
+        self.cohortList.setObjectName("cohortList")
+        self.label = QtWidgets.QLabel(self.tab_2)
+        self.label.setGeometry(QtCore.QRect(30, 20, 151, 16))
+        self.label.setObjectName("label")
+        self.verticalLayoutWidget = QtWidgets.QWidget(self.tab_2)
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(330, 40, 201, 451))
+        self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
+        self.verticalLayout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout.setSpacing(5)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.genSwimmerPlot = QtWidgets.QPushButton(self.verticalLayoutWidget)
+        self.genSwimmerPlot.setMinimumSize(QtCore.QSize(0, 75))
+        self.genSwimmerPlot.setCheckable(True)
+        self.genSwimmerPlot.setAutoExclusive(True)
+        self.genSwimmerPlot.setObjectName("genSwimmerPlot")
+        self.verticalLayout.addWidget(self.genSwimmerPlot)
+        self.genSpiderPlot = QtWidgets.QPushButton(self.verticalLayoutWidget)
+        self.genSpiderPlot.setMinimumSize(QtCore.QSize(0, 75))
+        self.genSpiderPlot.setCheckable(True)
+        self.genSpiderPlot.setAutoExclusive(True)
+        self.genSpiderPlot.setObjectName("genSpiderPlot")
+        self.verticalLayout.addWidget(self.genSpiderPlot)
+        self.genWaterfallPlot = QtWidgets.QPushButton(self.verticalLayoutWidget)
+        self.genWaterfallPlot.setMinimumSize(QtCore.QSize(0, 75))
+        self.genWaterfallPlot.setCheckable(True)
+        self.genWaterfallPlot.setAutoExclusive(True)
+        self.genWaterfallPlot.setObjectName("genWaterfallPlot")
+        self.verticalLayout.addWidget(self.genWaterfallPlot)
+        self.exportPlotData = QtWidgets.QPushButton(self.verticalLayoutWidget)
+        self.exportPlotData.setMinimumSize(QtCore.QSize(199, 75))
+        self.exportPlotData.setObjectName("exportPlotData")
+        self.verticalLayout.addWidget(self.exportPlotData)
+        self.clearPlot = QtWidgets.QPushButton(self.verticalLayoutWidget)
+        self.clearPlot.setMinimumSize(QtCore.QSize(75, 75))
+        self.clearPlot.setObjectName("clearPlot")
+        self.verticalLayout.addWidget(self.clearPlot)
+        self.tabWidget.addTab(self.tab_2, "")
+
+        self.retranslateUi(plotAndGraphUtility)
+        self.tabWidget.setCurrentIndex(1)
+        QtCore.QMetaObject.connectSlotsByName(plotAndGraphUtility)
+
+    def retranslateUi(self, plotAndGraphUtility):
+        _translate = QtCore.QCoreApplication.translate
+        plotAndGraphUtility.setWindowTitle(_translate("plotAndGraphUtility", "Plots & Graphing Utility"))
+        self.groupBox.setTitle(_translate("plotAndGraphUtility", "Viewer"))
+        self.label_2.setText(_translate("plotAndGraphUtility", "Patient Selection:"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("plotAndGraphUtility", "Patient Graphing"))
+        self.label.setText(_translate("plotAndGraphUtility", "Cohort Members:"))
+        self.genSwimmerPlot.setText(_translate("plotAndGraphUtility", "Swimmer Plot"))
+        self.genSpiderPlot.setText(_translate("plotAndGraphUtility", "Spider Plot"))
+        self.genWaterfallPlot.setText(_translate("plotAndGraphUtility", "Waterfall Plot"))
+        self.exportPlotData.setText(_translate("plotAndGraphUtility", "Export Plot Data"))
+        self.clearPlot.setText(_translate("plotAndGraphUtility", "Clear Plot"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("plotAndGraphUtility", "Cohort Plots"))
+
+from pyqtgraph import PlotWidget
