@@ -3,5 +3,5 @@
 This revised version of the original ENABLE program was designed to be more robust, versatile, and powerful than the original.
 
 Current GUI:
-![ScreenShot](/screenshots/ENABLE_GUI.png)
+![ScreenShot](/images/ENABLE_GUI.png)
 
