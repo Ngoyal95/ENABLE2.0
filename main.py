@@ -279,10 +279,14 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             self.statusbar.showMessage('Performing RECIST calculations')
             for key, patient in self.StudyRoot.patients.items():
                 RECISTComp(patient) #perform RECIST computations for the selected patient
+                pprint(patient.exams)
+                for key,exam in patient.exams.items():
+                    pprint(vars(exam))
             self.statusbar.showMessage('Done with RECIST calculations!', 1000)
         except AttributeError:
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
             self.Calcs = False
+
 
     def removeSelectedPatient(self):
         #remove highlighted patients, flag them in StudyRoot so they are skipped (ignore == True)
@@ -626,3 +630,6 @@ if __name__ == '__main__':              # if we're running file directly and not
     form = MainWindow()                 # We set the form to be our ExampleApp (design)
     form.show()                         # Show the form
     sys.exit(app.exec_())               # and execute the app
+
+#CHANGELOG
+#7/6/17 commit 45177f75869b17652c82adaeddd97055c9ff15bc - Added ability to 'append' patient list

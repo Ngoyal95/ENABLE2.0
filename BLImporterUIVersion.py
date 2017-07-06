@@ -142,7 +142,8 @@ def extractData(df,ID,root):
             
             if not (lesion.target.lower() == 'target' or lesion.target.lower == 'non-target' or lesion.newlesion == True):
                 detNoLs = True
-            exam.add_containsnoT_NT_NL(detNoLs) #set, defaults to False if we find T, NT, or NL
+        
+        exam.add_containsnoT_NT_NL(detNoLs) #set, defaults to False if we find T, NT, or NL
 
     link.exams[1].add_current(True) #set the first exam to be current by default
     link.exams[examCount].add_baseline(True) #set last exam to baseline by default
