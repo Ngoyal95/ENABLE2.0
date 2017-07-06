@@ -290,7 +290,17 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="removePatient">
+        <widget class="QPushButton" name="patientListAppend">
+         <property name="text">
+          <string>Append List</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="excludePatient">
+         <property name="styleSheet">
+          <string notr="true">QPushButton { color: red }</string>
+         </property>
          <property name="text">
           <string>Exclude highlighted patient</string>
          </property>
@@ -298,6 +308,9 @@
        </item>
        <item>
         <widget class="QPushButton" name="removePatients">
+         <property name="styleSheet">
+          <string notr="true">QPushButton { color: rgb(255, 0, 0) }</string>
+         </property>
          <property name="text">
           <string>Remove All Patients</string>
          </property>
@@ -472,7 +485,11 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="consultPatient"/>
+            <widget class="QLineEdit" name="consultPatient">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -486,7 +503,11 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="consultMRN"/>
+            <widget class="QLineEdit" name="consultMRN">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -500,14 +521,33 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="consultProtocol"/>
+            <widget class="QLineEdit" name="consultProtocol">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_9">
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <property name="sizeConstraint">
+            <enum>QLayout::SetNoConstraint</enum>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
            <item>
             <widget class="QLabel" name="label_10">
+             <property name="maximumSize">
+              <size>
+               <width>75</width>
+               <height>16777215</height>
+              </size>
+             </property>
              <property name="text">
               <string>Study Date:</string>
              </property>
@@ -538,7 +578,7 @@
            <x>0</x>
            <y>0</y>
            <width>281</width>
-           <height>148</height>
+           <height>108</height>
           </rect>
          </property>
          <attribute name="label">
@@ -625,6 +665,14 @@ p, li { white-space: pre-wrap; }
          </widget>
         </widget>
         <widget class="QWidget" name="page_3">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>281</width>
+           <height>108</height>
+          </rect>
+         </property>
          <attribute name="label">
           <string>3-Other</string>
          </attribute>

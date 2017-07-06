@@ -177,7 +177,7 @@ def exportPlotData(StudyRoot,OutDir):
 			QMessageBox.warning(None,'Error!','Could not compute percent change for patient: ' + patient.name + '\nError due to baseline sum = 0')
 
 		indivPtData = [patient.name,int(patient.mrn),patient.sid,val,patient.exams[1].overallresponse]
-		print(indivPtData)
+		#print(indivPtData)
 		ptData.append(indivPtData)
 
 	#now reorder patients in ptData list descending %change from baseline

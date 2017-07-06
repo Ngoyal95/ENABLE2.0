@@ -19,9 +19,13 @@ def BLImport(df,root,dirName, baseNames):
     colsA = list({'RECIST Diameter (cm)','Long Diameter (cm)','Short Diameter (cm)'})
     colsB = list({'RECIST Diameter (cm)','Long Diameter (cm)','Short Diameter (cm)','Volume (cm³)'})
 
-    df = [] #final dataframe list, stores all BLs imported
+    #df = [] #final dataframe list, stores all BLs imported
     ptname = ''
     for file in baseNames:
+        #fist check if patient already in dict so we don't duplicate
+        MRN,SID = getMRNSID(file)
+        key = (MRN+r'/'+SID)
+        #if key not in root.patients.keys():
         xl = pd.ExcelFile(dirName + r'/'+file)
         dTemp = xl.parse()
         pd.DataFrame(dTemp)
@@ -34,17 +38,13 @@ def BLImport(df,root,dirName, baseNames):
         dTemp['Volume (cm³)'] = dTemp['Volume (cm³)'].apply(lambda x: x/1000, 0) #mm^3 --> cm^3
         dTemp[colsB] = dTemp[colsB].round(decimals=1) #round to one decimal place
 
-
         ptname = dTemp.get_value(1,'Patient Name') #get patient name before cleaning, always in same row 
         #dTemp = dropData(dTemp) #drop unnecessary rows (ie not Target or Non-Target or new lesions)
-
-        MRN,SID = getMRNSID(file)
-        root.add_patient({(MRN+r'/'+SID):BLDataClasses.Patient(MRN,SID,ptname)}) #add patient to the patients dict under the root
-        extractData(dTemp,(MRN+r'/'+SID),root)
-
+        
+        root.add_patient({key:BLDataClasses.Patient(MRN,SID,ptname)}) #add patient to the patients dict under the root
+        extractData(dTemp,key,root)
         df.append(dTemp) #append the BL to the overall list of BLs
     pd.DataFrame(df)
-    #print(df)
 
 def dropData(df):
     NLcheck = re.compile('\s?new lesion\s?|\snl\s?', re.IGNORECASE)

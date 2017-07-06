@@ -153,20 +153,19 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.operatingMode(1) #default to Export mode, self.opMode stores operating mode state (1 == export, 0 == consult)
         self.setWindowIcon(QtGui.QIcon('../icons/enable_icon.png'))
         self.consultDate.setDate(QtCore.QDate.currentDate())
-
-
+        
         #### BUTTON FUNCTIONS ####
         self.importPatients.clicked.connect(self.importBookmarks)
         self.removePatients.clicked.connect(self.clearBookmarks)
         
         self.recistCalc.clicked.connect(self.recistCalculations)
-        self.generateRECIST.clicked.connect(self.genRECIST)
-        self.generateSpreadsheets.clicked.connect(self.genSpreadsheets)
-        self.removePatient.clicked.connect(self.removeSelectedPatient)
-        self.includePatient.clicked.connect(self.includeSelectedPatient)
-        self.exportPlotData.clicked.connect(self.EPD)
-
-        self.configureButton.clicked.connect(self.configProg)
+        self.generateRECIST.clicked.connect(self.genRECIST)  #Generate RECIST worksheets
+        self.generateSpreadsheets.clicked.connect(self.genSpreadsheets)  #generate spreadsheets (singles and cohort)
+        self.excludePatient.clicked.connect(self.removeSelectedPatient)  #exclude selected patient
+        self.includePatient.clicked.connect(self.includeSelectedPatient)  #include patient
+        self.exportPlotData.clicked.connect(self.EPD)  #export waterfall/spider/swimmer plot data
+        self.patientListAppend.clicked.connect(self.appendPatientList)
+        self.configureButton.clicked.connect(self.configProg)  #program config
         self.configureButton.setIcon(QtGui.QIcon('../icons/configIcon.png'))
 
         #### LAUNCH SECONDARY DIALOGS ####
@@ -177,6 +176,9 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.exportMode.clicked.connect(lambda: self.operatingMode(1))
         self.consultMode.clicked.connect(lambda: self.operatingMode(0))
 
+        #### CONSULT PANEL ####
+        self.patientList.clicked.connect(self.updateConsult)
+
         #### DISPLAY RELATED ####
         self.show()
 
@@ -184,6 +186,73 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.databaseUploader.clicked.connect(self.launchDbUploadDialog) #open uploader dialog
 
     #### MAIN FUNCTIONS ####
+    def appendPatientList(self):
+        self.appendList = [] #list specifically for appending
+        try:
+            getattr(self,'StudyRoot')  #only append if a StudyRoot exist, otherwise call the import fnx.   
+            self.statusbar.showMessage('Appending Patient List...')
+            #Add patients to already existing StudyRoot
+            flag = 0
+            try: #catch error when user hits "ESC" in file select dialogue
+                ret = QFileDialog.getOpenFileNames(self, "Select Bookmark List(s)", self.BLDir) #returns tuple (list of file names, filter)
+                files = ret[0] #absolute file paths to bookmark lists selected
+                
+                self.dirName = os.path.dirname(files[0]) #all BL in same directory, take dir from first
+                #self.baseNames = [] #initialize list of base names
+                for i in files:
+                    if i not in self.baseNames: #only add if not already in list
+                        self.baseNames.append(os.path.basename(i)) #add the base names to a list
+                    self.appendList.append(os.path.basename(i))
+                flag = 0
+                
+            except Exception:
+                self.dirName = ''
+                self.baseNames = ''
+                flag = 1 #no imports
+        
+            if flag == 0:
+                #for self.file in self.baseNames:
+                BLImport(self.df,self.StudyRoot,self.dirName,self.appendList) #send one patient at a time, adding them to the StudyRoot one at a time
+                QMessageBox.information(self,'Message','Bookmark List(s) successfully appended.')
+                self.statusbar.showMessage('Done importing Bookmark List(s)', 1000)
+                
+                ### Populate List with Pt names ###
+                self.patientList.clear() #cleat to update
+                for key,patient in self.StudyRoot.patients.items():
+                    self.patientList.addItem(patient.name + ' - ' + key)
+            elif flag == 1:
+                QMessageBox.information(self,'Message','No Bookmark List(s) imported.')
+                del self.StudyRoot
+                self.statusbar.clearMessage()
+        except AttributeError:
+            #study root doesnt exist.
+            #call import fnx.
+            self.importBookmarks()
+
+    def updateConsult(self):
+        self.currPt = self.patientList.currentItem().text()
+        self.MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
+        self.selkey = self.MRNSID.search(self.currPt).group() #selected patient
+        
+        self.ptname = self.StudyRoot.patients[self.selkey].name
+        self.ptmrn = self.StudyRoot.patients[self.selkey].mrn
+        self.ptsid = self.StudyRoot.patients[self.selkey].sid
+
+        #Update display panel
+        self.consultPatient.setText(self.ptname)
+        self.consultMRN.setText(self.ptmrn)
+        self.consultProtocol.setText(self.ptsid)
+
+        self.link = self.StudyRoot.patients[self.selkey].exams.items() #link contains the exams
+        self.exams = []
+        for key,exam in self.link:
+            self.exams.append(str(key) + ': ' + str(exam.modality) + ' - ' + str(exam.date))
+
+        self.studyDate.clear()
+        self.studyDate.addItems(self.exams)
+        self.examDate = self.studyDate.currentText()
+
+
     def EPD(self):
         #Export plot data (all 3 types)
         try:
@@ -298,14 +367,15 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.patientList.clear()
         self.StudyRoot = BLDataClasses.StudyRoot() #create a StudyRoot
         self.df = pd.DataFrame()
-
+        self.baseNames = [] #initialize list of base names
+        
         flag = 0
         try: #catch error when user hits "ESC" in file select dialogue
             ret = QFileDialog.getOpenFileNames(self, "Select Bookmark List(s)", self.BLDir) #returns tuple (list of file names, filter)
             files = ret[0] #absolute file paths to bookmark lists selected
             
             self.dirName = os.path.dirname(files[0]) #all BL in same directory, take dir from first
-            self.baseNames = [] #initialize list of base names
+            #self.baseNames = [] #initialize list of base names
             for i in files:
                 self.baseNames.append(os.path.basename(i)) #add the base names to a list
             flag = 0
