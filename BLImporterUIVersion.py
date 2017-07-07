@@ -1,5 +1,5 @@
 #Code to import a Bookmark List
-#Revision 6/21/17
+#Revision 7/7/17
 import easygui
 import os
 import pandas as pd
@@ -33,9 +33,9 @@ def BLImport(df, root, dirName, baseNames):
         dTemp = dTemp.rename(columns = renameCols)
 
         #correct mm to cm
-        dTemp[colsA] = dTemp[colsA].apply(lambda x: x/10, 0) #mm --> cm
+        dTemp[colsA] = dTemp[colsA].apply(lambda x: x/10, 0) #mm --> cm, no rounding
         dTemp['Volume (cm³)'] = dTemp['Volume (cm³)'].apply(lambda x: x/1000, 0) #mm^3 --> cm^3
-        dTemp[colsB] = dTemp[colsB].round(decimals=1) #round to one decimal place
+        #dTemp[colsB] = dTemp[colsB].round(decimals=1) #round to one decimal place
 
         ptname = dTemp.get_value(1,'Patient Name') #get patient name before cleaning, always in same row 
         
@@ -44,8 +44,10 @@ def BLImport(df, root, dirName, baseNames):
         
         root.add_patient({key:BLDataClasses.Patient(MRN,SID,ptname)}) #add patient to the patients dict under the root
         extractData(dTemp,key,root)
-        df.append(dTemp) #append the BL to the overall list of BLs
+        df.append(dTemp['RECIST Diameter (cm)']) #append the BL to the overall list of BLs
+        #print(dTemp)
     pd.DataFrame(df)
+    
 
 def dropData(df):
     NLcheck = re.compile('\s?new lesion\s?|\snl\s?', re.IGNORECASE)

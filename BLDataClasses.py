@@ -133,17 +133,17 @@ class Lesion:
         slicenum, recistdia, longdia, shortdia, volume, humean, creator):
         self.fu = fu
         self.name = name
-        self.tool = tool
+        self.tool = tool #string
         self.desc = desc
-        self.target = target #A STRING
+        self.target = target #A STRING, either 'Target','Non-Target','Unspecified', or 'New Lesion' which is set by ENABLE (New Lesion is not a PACS option)
         self.subtype = subtype #lesion sub type (ie lung, lymph, etc)
         self.series = series
         self.slice = slicenum
-        self.recistdia = recistdia
-        self.longdia = longdia
-        self.shortdia = shortdia
-        self.volume = volume
-        self.humean = humean
+        self.recistdia = recistdia #cm (rounded)
+        self.longdia = longdia #cm (unrounded)
+        self.shortdia = shortdia #cm (unrounded)
+        self.volume = volume #cm^3 (unrounded)
+        self.humean = humean #HU
         self.creator = creator
 
         #variables to be set after obj initialization

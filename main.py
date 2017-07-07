@@ -138,8 +138,6 @@ class ExamSelectWindow(QDialog, examselect.Ui_Form):
         #Close selection dialog
         self.close()
 
-
-
 class MainWindow(QMainWindow, design.Ui_mainWindow):
     def __init__(self):
         # super use here because it allows us to
@@ -279,14 +277,13 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             self.statusbar.showMessage('Performing RECIST calculations')
             for key, patient in self.StudyRoot.patients.items():
                 RECISTComp(patient) #perform RECIST computations for the selected patient
-                pprint(patient.exams)
+                #pprint(patient.exams)
                 for key,exam in patient.exams.items():
                     pprint(vars(exam))
             self.statusbar.showMessage('Done with RECIST calculations!', 1000)
         except AttributeError:
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
             self.Calcs = False
-
 
     def removeSelectedPatient(self):
         #remove highlighted patients, flag them in StudyRoot so they are skipped (ignore == True)
@@ -370,7 +367,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.statusbar.showMessage('Importing Bookmark List(s)...')
         self.patientList.clear()
         self.StudyRoot = BLDataClasses.StudyRoot() #create a StudyRoot
-        self.df = pd.DataFrame()
+        self.df = []
         self.baseNames = [] #initialize list of base names
         
         flag = 0
@@ -402,7 +399,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             QMessageBox.information(self,'Message','No Bookmark List(s) imported.')
             del self.StudyRoot
             self.statusbar.clearMessage()
-
+        #pprint(self.df)
     def genSpreadsheets(self):
         #call the function to create spreadsheets
         try:
@@ -616,7 +613,7 @@ class DatabaseUploadDialog(QDialog, uploader.Ui_databaseuploaddialog):
         self.setupUi(self) #setup the graphing window
 
 
-if __name__ == '__main__':              # if we're running file directly and not importing it
+if __name__ == '__main__':
     #set application icon
     myappid = u'ENABLE 2.0_V1' # arbitrary string
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
@@ -633,3 +630,4 @@ if __name__ == '__main__':              # if we're running file directly and not
 
 #CHANGELOG
 #7/6/17 commit 45177f75869b17652c82adaeddd97055c9ff15bc - Added ability to 'append' patient list
+#7/7/17 commit f5c60f23f0f25f3146ac38c2ab8755062d5894a0 - Fixed error where exams were incorrectly marked as containsnoT_NT_NL = True due to faulty logic in BLImporterUIVersion.py around line 140
