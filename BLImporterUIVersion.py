@@ -11,15 +11,14 @@ import xlrd
 from pprint import pprint
 from RECISTComp import RECISTComp
 
-def BLImport(df,root,dirName, baseNames):
+def BLImport(df, root, dirName, baseNames):
     #function to open a bookmark list, store in in pandas dataframes, and clean the dataframes
-    renameCols ={'Unnamed: 1':'Lesion Header','RECIST Diameter ( mm )':'RECIST Diameter (cm)', 'Long Diameter ( mm )':'Long Diameter (cm)',\
+    renameCols = {'Unnamed: 1':'Lesion Header','RECIST Diameter ( mm )':'RECIST Diameter (cm)', 'Long Diameter ( mm )':'Long Diameter (cm)',\
                 'Short Diameter ( mm )':'Short Diameter (cm)','Volume ( mm³ )':'Volume (cm³)','HU Mean ( HU )':'HU Mean (HU)'}
     
     colsA = list({'RECIST Diameter (cm)','Long Diameter (cm)','Short Diameter (cm)'})
     colsB = list({'RECIST Diameter (cm)','Long Diameter (cm)','Short Diameter (cm)','Volume (cm³)'})
 
-    #df = [] #final dataframe list, stores all BLs imported
     ptname = ''
     for file in baseNames:
         #fist check if patient already in dict so we don't duplicate
@@ -39,6 +38,8 @@ def BLImport(df,root,dirName, baseNames):
         dTemp[colsB] = dTemp[colsB].round(decimals=1) #round to one decimal place
 
         ptname = dTemp.get_value(1,'Patient Name') #get patient name before cleaning, always in same row 
+        
+        #NOTE: When this line is included, the days/weeks from baseline will be incorrectly determined for any exam which does not have T, NT, NL (program crashes)
         #dTemp = dropData(dTemp) #drop unnecessary rows (ie not Target or Non-Target or new lesions)
         
         root.add_patient({key:BLDataClasses.Patient(MRN,SID,ptname)}) #add patient to the patients dict under the root
@@ -131,7 +132,7 @@ def extractData(df,ID,root):
 
         #check if all lymph are less than 1cm in size and set flag in exam obj
         #Also get if exam contains no T,NT,or NL to set flag containsnoT_NT_NL in the exam object (needed later to detect bad baseline choices)
-        detNoLs = False
+        detNoLs = True
         for lesion in exam.lesions:
             
             lymph = 1 #set to 0 if any lymph short axis is >1cm
@@ -140,8 +141,8 @@ def extractData(df,ID,root):
                     lymph = 0
             exam.lymphsize = bool(lymph) #sets lymphsize = True if all lymph have short axis < 1cm, else False
             
-            if not (lesion.target.lower() == 'target' or lesion.target.lower == 'non-target' or lesion.newlesion == True):
-                detNoLs = True
+            if (lesion.target.lower() == 'target' or lesion.target.lower == 'non-target' or lesion.newlesion == True):
+                detNoLs = False
         
         exam.add_containsnoT_NT_NL(detNoLs) #set, defaults to False if we find T, NT, or NL
 
