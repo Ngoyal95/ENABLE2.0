@@ -21,7 +21,7 @@ def RECISTComp(patient):
                 elif lesion.target.lower() == 'non-target':
                     ntsum += lesion.recistdia
 
-        exam.add_RECISTsums(round(tsum, 1), round(ntsum, 1)) #store sums after all lesion diameters added up
+        exam.add_RECISTsums(round(tsum/10, 1), round(ntsum/10, 1)) #store sums after all lesion diameters added up
         tsum = 0
         ntsum = 0
 

@@ -13,11 +13,14 @@ from RECISTComp import RECISTComp
 
 def BLImport(df, root, dirName, baseNames):
     #function to open a bookmark list, store in in pandas dataframes, and clean the dataframes
-    renameCols = {'Unnamed: 1':'Lesion Header','RECIST Diameter ( mm )':'RECIST Diameter (cm)', 'Long Diameter ( mm )':'Long Diameter (cm)',\
-                'Short Diameter ( mm )':'Short Diameter (cm)','Volume ( mm³ )':'Volume (cm³)','HU Mean ( HU )':'HU Mean (HU)'}
+    # renameCols = {'Unnamed: 1':'Lesion Header','RECIST Diameter ( mm )':'RECIST Diameter (cm)', 'Long Diameter ( mm )':'Long Diameter (cm)',\
+    #             'Short Diameter ( mm )':'Short Diameter (cm)','Volume ( mm³ )':'Volume (cm³)','HU Mean ( HU )':'HU Mean (HU)'}
     
-    colsA = list({'RECIST Diameter (cm)','Long Diameter (cm)','Short Diameter (cm)'})
-    colsB = list({'RECIST Diameter (cm)','Long Diameter (cm)','Short Diameter (cm)','Volume (cm³)'})
+    renameCols = {'Unnamed: 1':'Lesion Header','RECIST Diameter ( mm )':'RECIST Diameter (mm)', 'Long Diameter ( mm )':'Long Diameter (mm)',\
+                'Short Diameter ( mm )':'Short Diameter (mm)','Volume ( mm³ )':'Volume (mm³)','HU Mean ( HU )':'HU Mean (HU)'}
+                
+    #colsA = list({'RECIST Diameter (cm)','Long Diameter (cm)','Short Diameter (cm)'})
+    #colsB = list({'RECIST Diameter (cm)','Long Diameter (cm)','Short Diameter (cm)','Volume (cm³)'})
 
     ptname = ''
     for file in baseNames:
@@ -33,8 +36,8 @@ def BLImport(df, root, dirName, baseNames):
         dTemp = dTemp.rename(columns = renameCols)
 
         #correct mm to cm
-        dTemp[colsA] = dTemp[colsA].apply(lambda x: x/10, 0) #mm --> cm, no rounding
-        dTemp['Volume (cm³)'] = dTemp['Volume (cm³)'].apply(lambda x: x/1000, 0) #mm^3 --> cm^3
+        #dTemp[colsA] = dTemp[colsA].apply(lambda x: x/10, 0) #mm --> cm, no rounding
+        #dTemp['Volume (cm³)'] = dTemp['Volume (cm³)'].apply(lambda x: x/1000, 0) #mm^3 --> cm^3
         #dTemp[colsB] = dTemp[colsB].round(decimals=1) #round to one decimal place
 
         ptname = dTemp.get_value(1,'Patient Name') #get patient name before cleaning, always in same row 
@@ -44,8 +47,7 @@ def BLImport(df, root, dirName, baseNames):
         
         root.add_patient({key:BLDataClasses.Patient(MRN,SID,ptname)}) #add patient to the patients dict under the root
         extractData(dTemp,key,root)
-        df.append(dTemp['RECIST Diameter (cm)']) #append the BL to the overall list of BLs
-        #print(dTemp)
+        df.append(dTemp) #append the BL to the overall list of BLs
     pd.DataFrame(df)
     
 
@@ -188,9 +190,9 @@ def extractLesionData(df,index,exam):
     lesion = BLDataClasses.Lesion( \
         str(df.get_value(index, 'Follow-Up')), str(df.get_value(index, 'Name')), str(df.get_value(index, 'Tool')), \
         str(df.get_value(index, 'Description')), lesionType, str(df.get_value(index, 'Sub-Type')), \
-        int(df.get_value(index, 'Series')), int(df.get_value(index, 'Slice#')), float(df.get_value(index, 'RECIST Diameter (cm)')), \
-        float(df.get_value(index, 'Long Diameter (cm)')), float(df.get_value(index,'Short Diameter (cm)')), \
-        float(df.get_value(index, 'Volume (cm³)')), float(df.get_value(index,'HU Mean (HU)')), str(df.get_value(index,'Creator'))  )
+        int(df.get_value(index, 'Series')), int(df.get_value(index, 'Slice#')), round(float(df.get_value(index, 'RECIST Diameter (mm)')),2), \
+        round(float(df.get_value(index, 'Long Diameter (mm)')),2), round(float(df.get_value(index,'Short Diameter (mm)')),2), \
+        round(float(df.get_value(index, 'Volume (mm³)')),2), float(df.get_value(index,'HU Mean (HU)')), str(df.get_value(index,'Creator'))  )
 
     NLcheck = re.compile('\s?new lesion\s?|\snl\s?', re.IGNORECASE)
     

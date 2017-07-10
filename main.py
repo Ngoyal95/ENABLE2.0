@@ -280,6 +280,8 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
                 #pprint(patient.exams)
                 for key,exam in patient.exams.items():
                     pprint(vars(exam))
+                    for lesion in exam.lesions:
+                        pprint(vars(lesion))
             self.statusbar.showMessage('Done with RECIST calculations!', 1000)
         except AttributeError:
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
@@ -401,6 +403,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             self.statusbar.clearMessage()
         #pprint(self.df)
     def genSpreadsheets(self):
+        '''       
         #call the function to create spreadsheets
         try:
             self.StudyRoot #check if patients imported
@@ -417,6 +420,8 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         except Exception:
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
         self.statusbar.showMessage('Done generating spreadsheets.', 1000)
+        '''
+        exportToExcel(self.StudyRoot,self.OutDir)
 
     def genRECIST(self):
         self.statusbar.showMessage('Generating RECIST worksheets...')
