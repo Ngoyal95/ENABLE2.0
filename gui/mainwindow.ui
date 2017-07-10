@@ -426,10 +426,10 @@
        <widget class="QWidget" name="verticalLayoutWidget_6">
         <property name="geometry">
          <rect>
-          <x>19</x>
-          <y>29</y>
+          <x>30</x>
+          <y>20</y>
           <width>251</width>
-          <height>231</height>
+          <height>274</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout">
@@ -443,7 +443,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="consultConsultant"/>
+            <widget class="QLineEdit" name="consultant"/>
            </item>
           </layout>
          </item>
@@ -544,17 +544,45 @@
             <widget class="QLabel" name="label_10">
              <property name="maximumSize">
               <size>
-               <width>75</width>
+               <width>120</width>
                <height>16777215</height>
               </size>
              </property>
              <property name="text">
-              <string>Study Date:</string>
+              <string>Prior Baseline date:</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QComboBox" name="studyDate"/>
+            <widget class="QComboBox" name="priorBaselineDate"/>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
+           <item>
+            <widget class="QLabel" name="label_11">
+             <property name="text">
+              <string>Baseline date:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="baselineDate"/>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_10">
+           <item>
+            <widget class="QLabel" name="label_12">
+             <property name="text">
+              <string>Restaging date:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="restagingDate"/>
            </item>
           </layout>
          </item>
@@ -564,13 +592,13 @@
         <property name="geometry">
          <rect>
           <x>20</x>
-          <y>290</y>
+          <y>330</y>
           <width>281</width>
-          <height>221</height>
+          <height>181</height>
          </rect>
         </property>
         <property name="currentIndex">
-         <number>3</number>
+         <number>2</number>
         </property>
         <widget class="QWidget" name="page">
          <property name="geometry">
@@ -578,19 +606,19 @@
            <x>0</x>
            <y>0</y>
            <width>281</width>
-           <height>97</height>
+           <height>88</height>
           </rect>
          </property>
          <attribute name="label">
           <string>1-Discussing Baseline Lesions</string>
          </attribute>
-         <widget class="QTextEdit" name="textEdit">
+         <widget class="QTextEdit" name="describe_1">
           <property name="geometry">
            <rect>
             <x>10</x>
             <y>10</y>
             <width>261</width>
-            <height>41</height>
+            <height>71</height>
            </rect>
           </property>
           <property name="html">
@@ -611,13 +639,13 @@ p, li { white-space: pre-wrap; }
            <x>0</x>
            <y>0</y>
            <width>281</width>
-           <height>97</height>
+           <height>88</height>
           </rect>
          </property>
          <attribute name="label">
           <string>2-Restaging or re-evaluation of lesion(s):</string>
          </attribute>
-         <widget class="QCheckBox" name="checkBox">
+         <widget class="QCheckBox" name="reason_2a">
           <property name="geometry">
            <rect>
             <x>10</x>
@@ -630,11 +658,11 @@ p, li { white-space: pre-wrap; }
            <string>Concern/question of prior measurement</string>
           </property>
          </widget>
-         <widget class="QCheckBox" name="checkBox_2">
+         <widget class="QCheckBox" name="reason_2b">
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>30</y>
+            <y>20</y>
             <width>271</width>
             <height>16</height>
            </rect>
@@ -643,44 +671,11 @@ p, li { white-space: pre-wrap; }
            <string>Concern/question of prior lesion selection</string>
           </property>
          </widget>
-         <widget class="QTextEdit" name="textEdit_2">
+         <widget class="QTextEdit" name="describe_2">
           <property name="geometry">
            <rect>
             <x>10</x>
-            <y>50</y>
-            <width>261</width>
-            <height>41</height>
-           </rect>
-          </property>
-          <property name="html">
-           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:7.8pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="placeholderText">
-           <string>Describe</string>
-          </property>
-         </widget>
-        </widget>
-        <widget class="QWidget" name="page_3">
-         <property name="geometry">
-          <rect>
-           <x>0</x>
-           <y>0</y>
-           <width>281</width>
-           <height>97</height>
-          </rect>
-         </property>
-         <attribute name="label">
-          <string>3-Other</string>
-         </attribute>
-         <widget class="QTextEdit" name="textEdit_3">
-          <property name="geometry">
-           <rect>
-            <x>10</x>
-            <y>10</y>
+            <y>40</y>
             <width>261</width>
             <height>41</height>
            </rect>
@@ -698,10 +693,18 @@ p, li { white-space: pre-wrap; }
          </widget>
         </widget>
         <widget class="QWidget" name="page_4">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>281</width>
+           <height>88</height>
+          </rect>
+         </property>
          <attribute name="label">
           <string>General Comments</string>
          </attribute>
-         <widget class="QTextEdit" name="textEdit_4">
+         <widget class="QTextEdit" name="generalComments">
           <property name="geometry">
            <rect>
             <x>10</x>
@@ -726,8 +729,8 @@ p, li { white-space: pre-wrap; }
        <widget class="QLabel" name="label_9">
         <property name="geometry">
          <rect>
-          <x>20</x>
-          <y>270</y>
+          <x>30</x>
+          <y>310</y>
           <width>121</width>
           <height>16</height>
          </rect>
@@ -736,7 +739,7 @@ p, li { white-space: pre-wrap; }
          <string>Reason for review:</string>
         </property>
        </widget>
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="generateConsultLog">
         <property name="geometry">
          <rect>
           <x>40</x>
@@ -747,6 +750,19 @@ p, li { white-space: pre-wrap; }
         </property>
         <property name="text">
          <string>Submit</string>
+        </property>
+       </widget>
+       <widget class="Line" name="line_3">
+        <property name="geometry">
+         <rect>
+          <x>7</x>
+          <y>290</y>
+          <width>291</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
         </property>
        </widget>
       </widget>
@@ -766,9 +782,12 @@ p, li { white-space: pre-wrap; }
        <rect>
         <x>30</x>
         <y>20</y>
-        <width>831</width>
+        <width>1201</width>
         <height>541</height>
        </rect>
+      </property>
+      <property name="layoutDirection">
+       <enum>Qt::LeftToRight</enum>
       </property>
       <property name="html">
        <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;

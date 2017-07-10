@@ -23,7 +23,7 @@ from BLImporterUIVersion import BLImport
 from RECISTComp import RECISTComp
 import pandas as pd
 from RECISTGen import RECISTSheet
-from DataExport import exportToExcel, waterfallPlot, spiderPlot, exportPlotData
+from DataExport import exportToExcel, waterfallPlot, spiderPlot, exportPlotData, exportToLog
 import BLDataClasses
 import shelve
 import sys # We need sys so that we can pass argv to QApplication
@@ -176,6 +176,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
 
         #### CONSULT PANEL ####
         self.patientList.clicked.connect(self.updateConsult)
+        self.generateConsultLog.clicked.connect(self.genConsultLog)
 
         #### DISPLAY RELATED ####
         self.show()
@@ -244,12 +245,14 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.link = self.StudyRoot.patients[self.selkey].exams.items() #link contains the exams
         self.exams = []
         for key,exam in self.link:
-            self.exams.append(str(key) + ': ' + str(exam.modality) + ' - ' + str(exam.date))
+            self.exams.append(str(exam.date))
 
-        self.studyDate.clear()
-        self.studyDate.addItems(self.exams)
-        self.examDate = self.studyDate.currentText()
-
+        self.priorBaselineDate.clear()
+        self.baselineDate.clear()
+        self.restagingDate.clear()
+        self.priorBaselineDate.addItems(self.exams)
+        self.baselineDate.addItems(self.exams)
+        self.restagingDate.addItems(self.exams)
 
     def EPD(self):
         #Export plot data (all 3 types)
@@ -402,8 +405,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             del self.StudyRoot
             self.statusbar.clearMessage()
         #pprint(self.df)
-    def genSpreadsheets(self):
-        '''       
+    def genSpreadsheets(self):   
         #call the function to create spreadsheets
         try:
             self.StudyRoot #check if patients imported
@@ -420,8 +422,6 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         except Exception:
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
         self.statusbar.showMessage('Done generating spreadsheets.', 1000)
-        '''
-        exportToExcel(self.StudyRoot,self.OutDir)
 
     def genRECIST(self):
         self.statusbar.showMessage('Generating RECIST worksheets...')
@@ -441,6 +441,23 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
         self.statusbar.showMessage('Done generating RECIST worksheets.', 1000)
 
+    def genConsultLog(self):
+        self.vals = [
+                    self.selkey,
+                    self.consultant.text(),
+                    self.consultPhys.text(),
+                    str(self.consultDate.date().toPyDate()),
+                    self.priorBaselineDate.currentText(),
+                    self.baselineDate.currentText(),
+                    self.restagingDate.currentText(),
+                    self.describe_1.toPlainText(),
+                    self.reason_2a.isChecked(),
+                    self.reason_2b.isChecked(),
+                    self.describe_2.toPlainText(),
+                    self.generalComments.toPlainText()
+                    ]
+        exportToLog(self.RECISTDir,self.OutDir,self.StudyRoot,self.vals)
+        
     #### UI FUNCTIONS ####
     def closeEvent(self,event):
         reply = QMessageBox.question(self,'Exit ENABLE 2.0',"Are you sure to quit ENABLE 2?", QMessageBox.Yes, QMessageBox.No)

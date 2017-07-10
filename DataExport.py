@@ -1,5 +1,6 @@
 #Module to export data to an excel spreadsheet
 
+import docx
 import time
 import pyqtgraph as pg
 import pandas as pd
@@ -254,6 +255,23 @@ def mapPtDataLM(wsP,patient,LMHeaders):
     compRow += 1
 
 #### CONSULT LOG ####
-def exportToLog(StudyDir,OutDir):
-    #function to export consult log
-    pass
+def exportToLog(RECISTDir,OutDir,StudyRoot,vals):
+    #Used to create radiologist consultation log
+    #vals is a list of the following:
+    #[selkey,consultant,phys,date,priorbaseline,baseline,restaging,describe_1,reason_2a,reason_2b,describe_2,comments,time]
+    patient = StudyRoot.patients[vals[0]]
+    
+    template = docx.Document(RECISTDir+r'\CIPS_Consult_Log.docx')
+    table = template.tables[0]
+    table.cell(0,2).text = patient.sid
+    table.cell(1,1).text = vals[2]
+    table.cell(1,3).text = vals[3]
+    table.cell(2,1).text = patient.name
+    table.cell(2,3).text = patient.mrn
+
+    table = template.tables[1]
+
+    template.save(OutDir + r'\TEMPLATE.docx')
+    
+
+    
