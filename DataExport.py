@@ -260,18 +260,65 @@ def exportToLog(RECISTDir,OutDir,StudyRoot,vals):
     #vals is a list of the following:
     #[selkey,consultant,phys,date,priorbaseline,baseline,restaging,describe_1,reason_2a,reason_2b,describe_2,comments,time]
     patient = StudyRoot.patients[vals[0]]
+    template = docx.Document(RECISTDir+r'/CIPS_Consult_Log.docx')
     
-    template = docx.Document(RECISTDir+r'\CIPS_Consult_Log.docx')
-    table = template.tables[0]
-    table.cell(0,2).text = patient.sid
+    table = template.tables[0] #meeting log table
+    table.cell(0,3).text = patient.sid
     table.cell(1,1).text = vals[2]
     table.cell(1,3).text = vals[3]
     table.cell(2,1).text = patient.name
     table.cell(2,3).text = patient.mrn
 
-    table = template.tables[1]
+    table = template.tables[1] #dates table
+    table.cell(0,1).text = vals[3]
+    table.cell(0,3).text = vals[4]
+    table.cell(1,3).text = vals[5]
+    table.cell(2,3).text = vals[6]
 
-    template.save(OutDir + r'\TEMPLATE.docx')
+    table = template.tables[2] #reason for review
+    if vals[7] is not '':
+        table.cell(0,0).text = 'X'
+        table.cell(1,3).text = vals[7]
+    if vals[8] or vals[9]:
+            table.cell(3,0).text = 'X'
+            if vals[8]:
+                table.cell(5,1).text = 'X'
+                table.cell(6,3).text = vals[10]
+            elif vals[9]:
+                table.cell(7,1).text = 'X'
+                table.cell(8,3).text = vals[10]
     
+    #Use restaging date to extract exam data
+    exam = next((x for key,x in patient.exams.items() if x.date == vals[6]), None)
+    
+    table = template.tables[3]
+    table.cell(0,1).text = exam.modality
+    table.cell(0,4).text = exam.date
+
+    table = template.tables[4] #lesion data table
+    #count number T,NT,NL lesions
+    lesionCount = 0
+    for lesion in exam.lesions:
+        if lesion.target.lower() != 'unspecified':
+            lesionCount += 1
+    
+    for i in range(0,lesionCount):
+        lesionData = [
+                    exam.lesions[i].target, exam.modality, exam.lesions[i].desc, \
+                    exam.lesions[i].recistdia, exam.lesions[i].series, exam.lesions[i].slice]
+        for l in range(0,6):
+            col = l+1
+            row = i+1
+            table.cell(row,col).text = str(lesionData[l])
+    
+    template.tables[5].cell(0,0).text = vals[11] #comments
+    
+    #save, throw error if open
+    try:
+        template.save(OutDir + r'/TEMPLATE.docx')
+    except Exception as e:
+        print('Error:', e)
+    
+
 
     

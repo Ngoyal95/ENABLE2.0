@@ -653,3 +653,4 @@ if __name__ == '__main__':
 #CHANGELOG
 #7/6/17 commit 45177f75869b17652c82adaeddd97055c9ff15bc - Added ability to 'append' patient list
 #7/7/17 commit f5c60f23f0f25f3146ac38c2ab8755062d5894a0 - Fixed error where exams were incorrectly marked as containsnoT_NT_NL = True due to faulty logic in BLImporterUIVersion.py around line 140
+#7/11/17 commit 
