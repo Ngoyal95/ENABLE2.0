@@ -44,12 +44,13 @@ class Patient:
 
 class Exam:
     #class module for the exam
-    def __init__(self, enum):
+    def __init__(self, enum, study_instance_uid):
         self.enum = enum #exam number
         self.lesions = [] #list storing lesions
 
         #variables to be set after obj initialization
         #set in BLImporter.py
+        self.study_instance_uid = study_instance_uid 
         self.date = '' #exam date
         self.modality = '' #exam modality (CT, MRI, PET, PET-CT)
         self.baseline = False #is it a baseline exam (boolean)
@@ -61,7 +62,6 @@ class Exam:
         if they are not in the (user specified or default) baselie to current exam range
         default: dont ignore any exams (assume most recent exam is current, oldest is baseline)
         '''
-
 
         #set in RECISTComp.py
         self.trecistsum = 0 #target lesion sum

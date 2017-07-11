@@ -187,12 +187,22 @@ def extractLesionData(df,index,exam):
     else:
         lesionType = 'Unspecified'
 
-    lesion = BLDataClasses.Lesion( \
-        str(df.get_value(index, 'Follow-Up')), str(df.get_value(index, 'Name')), str(df.get_value(index, 'Tool')), \
-        str(df.get_value(index, 'Description')), lesionType, str(df.get_value(index, 'Sub-Type')), \
-        int(df.get_value(index, 'Series')), int(df.get_value(index, 'Slice#')), round(float(df.get_value(index, 'RECIST Diameter (mm)')),2), \
-        round(float(df.get_value(index, 'Long Diameter (mm)')),2), round(float(df.get_value(index,'Short Diameter (mm)')),2), \
-        round(float(df.get_value(index, 'Volume (mm³)')),2), float(df.get_value(index,'HU Mean (HU)')), str(df.get_value(index,'Creator'))  )
+    lesion = BLDataClasses.Lesion(
+                                str(df.get_value(index, 'Follow-Up')), 
+                                str(df.get_value(index, 'Name')), 
+                                str(df.get_value(index, 'Tool')),
+                                str(df.get_value(index, 'Description')), 
+                                lesionType, 
+                                str(df.get_value(index, 'Sub-Type')),
+                                int(df.get_value(index, 'Series')), 
+                                int(df.get_value(index, 'Slice#')), 
+                                round(float(df.get_value(index, 'RECIST Diameter (mm)')),2),
+                                round(float(df.get_value(index, 'Long Diameter (mm)')),2), 
+                                round(float(df.get_value(index,'Short Diameter (mm)')),2),
+                                round(float(df.get_value(index, 'Volume (mm³)')),2), 
+                                float(df.get_value(index,'HU Mean (HU)')), 
+                                str(df.get_value(index,'Creator'))  
+                                )
 
     NLcheck = re.compile('\s?new lesion\s?|\snl\s?', re.IGNORECASE)
     

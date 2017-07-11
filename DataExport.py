@@ -8,7 +8,6 @@ import sys
 from PyQt5.QtWidgets import QMessageBox, QDialog
 from openpyxl import Workbook
 from pprint import pprint
-from operator import itemgetter
 
 #### EXCEL (SINGLE SPREADSHEETS AND COMPILED) ####
 def exportToExcel(StudyRoot,OutDir):
