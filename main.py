@@ -425,22 +425,23 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
 
     def genRECIST(self):
         self.statusbar.showMessage('Generating RECIST worksheets...')
-        try:
-            self.StudyRoot #check if patients imported
-            try:
-                if self.Calcs == True: #check if calcs performed
-                    generate_RECIST_Sheets(self.RECISTDir,self.OutDir,self.dirName,self.baseNames,self.StudyRoot,self.singleSheet.isChecked())
-                    QMessageBox.information(self,'Message','RECIST worksheets generated.')
-                elif self.Calcs == False:
-                    QMessageBox.information(self,'Message','Please perform RECIST calculations.')
-            except Exception as e:
-                QMessageBox.information(self,'Message','Please perform RECIST calculations.')
-                print('Error: ',e)
+        generate_RECIST_Sheets(self.RECISTDir,self.OutDir,self.dirName,self.baseNames,self.StudyRoot,self.singleSheet.isChecked())
+        # try:
+        #     self.StudyRoot #check if patients imported
+        #     try:
+        #         if self.Calcs == True: #check if calcs performed
+        #             generate_RECIST_Sheets(self.RECISTDir,self.OutDir,self.dirName,self.baseNames,self.StudyRoot,self.singleSheet.isChecked())
+        #             QMessageBox.information(self,'Message','RECIST worksheets generated.')
+        #         elif self.Calcs == False:
+        #             QMessageBox.information(self,'Message','Please perform RECIST calculations.')
+        #     except Exception as e:
+        #         QMessageBox.information(self,'Message','Please perform RECIST calculations.')
+        #         print('Error: ',e)
 
-        except Exception as e:
-            QMessageBox.information(self,'Message','Please import Bookmark List(s).')
-            print('Error: ',e)
-        self.statusbar.showMessage('Done generating RECIST worksheets.', 1000)
+        # except Exception as e:
+        #     QMessageBox.information(self,'Message','Please import Bookmark List(s).')
+        #     print('Error: ',e)
+        # self.statusbar.showMessage('Done generating RECIST worksheets.', 1000)
 
     def genConsultLog(self):
         self.vals = [

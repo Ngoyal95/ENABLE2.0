@@ -21,16 +21,16 @@ def generate_RECIST_Sheets(RECISTDir, OutDir, dirName, baseNames, StudyRoot,sing
             #Patient is not ignored, user wants to include them in outputs
             if singleSheet == True:
                 numExams = len(patient.exams.keys())
-                for l in range (1, numExams+1):
+                for l in range(1, numExams+1):
                     #search for current exam
                     if patient.exams[l].current == True:
                         break
-                RECISTSheet(RECISTDir, OutDir,patient,patient.exams[l],file) #generate sheet for exam marked as 'current'
+                RECISTSheet(RECISTDir, OutDir, patient, patient.exams[l], file) #generate sheet for exam marked as 'current'
             elif singleSheet == False:
                 #iterate through all exams within the baseline->current range and create RECIST worksheets
-                for key,exam in patient.exams.items():
+                for key, exam in patient.exams.items():
                     if exam.ignore == False:
-                        RECISTSheet(RECISTDir, OutDir,patient,exam,file)
+                        RECISTSheet(RECISTDir, OutDir, patient, exam, file)
         else:
             pass
     
@@ -52,7 +52,8 @@ def generate_RECIST_Sheets(RECISTDir, OutDir, dirName, baseNames, StudyRoot,sing
     # if word is not None:
     #     word.Quit()
 
-def getMRNSID(file): #file arg is a str
+def getMRNSID(file): 
+    #file arg is a str
     #extract the MRN and SID from the BL filename (expected format is MRN#xxxxxxx_xx-x-xxxx (7 digit MRN))
     regMRN = re.compile(r'\d{7}')
     regSID = re.compile(r'\w{2}-\w-\w{4}')
@@ -64,7 +65,7 @@ def convDate(date):
     #converts date from format mm/dd/yyy to mm.dd.yyyy filepath
     return str(date.replace(r'/','.',))
 
-def RECISTSheet(RECISTDir, OutDir,patient,exam,file):
+def RECISTSheet(RECISTDir, OutDir, patient, exam, file):
     '''Generate a single RECIST sheet for the patient and specified exam'''
     MRN, SID = getMRNSID(file) #gets MRN and SID from the file name
     

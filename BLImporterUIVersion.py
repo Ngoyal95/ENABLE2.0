@@ -16,9 +16,11 @@ def BLImport(df, root, dirName, baseNames):
     # renameCols = {'Unnamed: 1':'Lesion Header','RECIST Diameter ( mm )':'RECIST Diameter (cm)', 'Long Diameter ( mm )':'Long Diameter (cm)',\
     #             'Short Diameter ( mm )':'Short Diameter (cm)','Volume ( mm³ )':'Volume (cm³)','HU Mean ( HU )':'HU Mean (HU)'}
     
+    # renameCols = {'Unnamed: 1':'Lesion Header','RECIST Diameter ( mm )':'RECIST Diameter (mm)', 'Long Diameter ( mm )':'Long Diameter (mm)',\
+    #             'Short Diameter ( mm )':'Short Diameter (mm)','Volume ( mm³ )':'Volume (mm³)','HU Mean ( HU )':'HU Mean (HU)'}
     renameCols = {'Unnamed: 1':'Lesion Header','RECIST Diameter ( mm )':'RECIST Diameter (mm)', 'Long Diameter ( mm )':'Long Diameter (mm)',\
-                'Short Diameter ( mm )':'Short Diameter (mm)','Volume ( mm³ )':'Volume (mm³)','HU Mean ( HU )':'HU Mean (HU)'}
-                
+                'Short Diameter ( mm )':'Short Diameter (mm)','Volume ( mm³ )':'Volume (mm³)'}
+     
     #colsA = list({'RECIST Diameter (cm)','Long Diameter (cm)','Short Diameter (cm)'})
     #colsB = list({'RECIST Diameter (cm)','Long Diameter (cm)','Short Diameter (cm)','Volume (cm³)'})
 
@@ -88,32 +90,38 @@ def extractData(df,ID,root):
 
     examCount = 0
     lesionCount = 0
-    date_modality_Flag = False #set to True when exam date + modality found
+    date_modality_Flag = False #set to True when new exam found, so need to find date + modality
     dateReg = re.compile(r'\d+/\d+/\d+')
-    modalityReg = re.compile(r' \w+')
+    beforeBaselineReg = re.compile(r'-\d+') #used to determine if an exam should be ignored
 
     #----Populate datastructure with patients' data----#
     for index, row in df.iterrows(): #iterate through dataframe rows to populate data structures
         SIUID = str(df.get_value(index,'Study Description'))
-        lesionCheck = str(df.get_value(index,'Lesion Header'))
-
+        lesionCheck = str(df.get_value(index,'Lesion Header')) #example: '10/10/2014 3:06 PM, CT, CTCHABDPEL (51 Days from Baseline)'
+        
         if "STUDY INSTANCE" in SIUID: #locate a new exam
             examCount += 1
             date_modality_Flag = True
-            link.add_exam({examCount:BLDataClasses.Exam(index)})
+            link.add_exam({examCount:BLDataClasses.Exam(index,SIUID.split("STUDY INSTANCE UID: ",1)[1])}) #add an exam to patient's exam list, store the 'index', and SIUID
             lesionCount = 0
-
 
         elif ~pd.isnull(lesionCheck): #found a lesion, add to current exam
             lesionCount+=1
             link.exams[examCount].add_lesion(extractLesionData(df,index,link.exams[examCount]))
             
             if date_modality_Flag == True:
-                #set the date and modality of exam
+                #set the date and modality of exam, also get scan area, and check if is before baseline
                 date_modality_Flag = False
+                modality = lesionCheck.split(', ')[1]
+                #examArea = lesionCheck.split(', ')[2].split(' ')[0]
+                
                 link.exams[examCount].add_date(dateReg.search(str(df.get_value(index,'Lesion Header'))).group())
-                link.exams[examCount].add_modality(modalityReg.search(str(df.get_value(index,'Lesion Header'))).group())
-        
+                link.exams[examCount].add_modality(modality)
+                #link.exams[examCount].add_examarea(examArea)
+
+                if beforeBaselineReg.search(lesionCheck) is not None:
+                    #exam is before baseline, set it
+                    link.exams[examCount].add_ignore(True)    
     
     for key,exam in link.exams.items():
         #-----Organize lesions by Target, then Non-Target, then NL, then unspec.; also get all clinician names who measured----#
@@ -137,6 +145,7 @@ def extractData(df,ID,root):
         #check if all lymph are less than 1cm in size and set flag in exam obj
         #Also get if exam contains no T,NT,or NL to set flag containsnoT_NT_NL in the exam object (needed later to detect bad baseline choices)
         detNoLs = True
+        beforeBaseline = False #used to determine which exams to ignore (i.e they are before baseline and were exported as such (so they have a -# days from baseline))
         for lesion in exam.lesions:
             
             lymph = 1 #set to 0 if any lymph short axis is >1cm
@@ -200,7 +209,7 @@ def extractLesionData(df,index,exam):
                                 round(float(df.get_value(index, 'Long Diameter (mm)')),2), 
                                 round(float(df.get_value(index,'Short Diameter (mm)')),2),
                                 round(float(df.get_value(index, 'Volume (mm³)')),2), 
-                                float(df.get_value(index,'HU Mean (HU)')), 
+                                #float(df.get_value(index,'HU Mean (HU)')), 
                                 str(df.get_value(index,'Creator'))  
                                 )
 

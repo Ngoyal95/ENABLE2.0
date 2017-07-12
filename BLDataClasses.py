@@ -47,18 +47,18 @@ class Exam:
     def __init__(
                 self, 
                 enum, 
-                #study_instance_uid
+                study_instance_uid
                 ):
         self.enum = enum #exam number
-        self.lesions = [] #list storing lesions
+        self.study_instance_uid = study_instance_uid #study instance uid, stored for future querying/access in PACS online browser
 
         #variables to be set after obj initialization
-        #set in BLImporter.py
-        #self.study_instance_uid = study_instance_uid 
+        self.lesions = [] #list storing lesions
         self.date = '' #exam date
         self.modality = '' #exam modality (CT, MRI, PET, PET-CT)
         self.baseline = False #is it a baseline exam (boolean)
         self.current = False #is it the current exam (most recent)
+        self.examarea = '' #CTCHABDPEL for example
         
         self.ignore = False
         '''NOTE:
@@ -89,6 +89,9 @@ class Exam:
 
         self.daysfromB = 0
         self.weeksfromB = 0
+
+    def add_examarea(self,examarea):
+        self.examarea = examarea
 
     def add_lesion(self, lesion): #lesion is a pointer to a lesion
         self.lesions.append(lesion)
@@ -135,8 +138,23 @@ class Exam:
 
 class Lesion:
     #class module for the Lesion datatype
-    def __init__(self, fu, name, tool, desc, target, subtype, series,\
-        slicenum, recistdia, longdia, shortdia, volume, humean, creator):
+    def __init__(
+                self, 
+                fu, 
+                name, 
+                tool, 
+                desc, 
+                target, 
+                subtype, 
+                series,
+                slicenum, 
+                recistdia, 
+                longdia, 
+                shortdia, 
+                volume, 
+                #humean, 
+                creator
+                ):
         self.fu = fu
         self.name = name
         self.tool = tool #string
@@ -149,7 +167,7 @@ class Lesion:
         self.longdia = longdia #cm (unrounded)
         self.shortdia = shortdia #cm (unrounded)
         self.volume = volume #cm^3 (unrounded)
-        self.humean = humean #HU
+        #self.humean = humean #HU
         self.creator = creator
 
         #variables to be set after obj initialization
