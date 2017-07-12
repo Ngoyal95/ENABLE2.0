@@ -416,11 +416,11 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
                     QMessageBox.information(self,'Message','Spreadsheets generated.')
                 elif self.Calcs == False:
                     QMessageBox.information(self,'Message','Please perform RECIST calculations.')
-            except AttributeError:
-                QMessageBox.information(self,'Message','Please perform RECIST calculations.')
+            except Exception as e:
+                QMessageBox.information(self,'Message','Please perform RECIST calculations.' + "\nError: ",e)
 
-        except Exception:
-            QMessageBox.information(self,'Message','Please import Bookmark List(s).')
+        except Exception as e:
+            QMessageBox.information(self,'Message','Please import Bookmark List(s).' + "\nError: ",e)
         self.statusbar.showMessage('Done generating spreadsheets.', 1000)
 
     def genRECIST(self):

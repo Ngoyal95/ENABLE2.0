@@ -44,13 +44,17 @@ class Patient:
 
 class Exam:
     #class module for the exam
-    def __init__(self, enum, study_instance_uid):
+    def __init__(
+                self, 
+                enum, 
+                #study_instance_uid
+                ):
         self.enum = enum #exam number
         self.lesions = [] #list storing lesions
 
         #variables to be set after obj initialization
         #set in BLImporter.py
-        self.study_instance_uid = study_instance_uid 
+        #self.study_instance_uid = study_instance_uid 
         self.date = '' #exam date
         self.modality = '' #exam modality (CT, MRI, PET, PET-CT)
         self.baseline = False #is it a baseline exam (boolean)
@@ -61,6 +65,8 @@ class Exam:
         ignore status used to exclude exams from best response determination 
         if they are not in the (user specified or default) baselie to current exam range
         default: dont ignore any exams (assume most recent exam is current, oldest is baseline)
+
+        also used when printing all the RECIST sheets for a patient to exclude exams we don't include in the baseline->current range
         '''
 
         #set in RECISTComp.py
