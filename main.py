@@ -22,7 +22,7 @@ import uploader #database upload page
 from BLImporterUIVersion import BLImport
 from RECISTComp import RECISTComp
 import pandas as pd
-from RECISTGen import RECISTSheet
+from RECISTGen import generate_RECIST_Sheets
 from DataExport import exportToExcel, waterfallPlot, spiderPlot, exportPlotData, exportToLog
 import BLDataClasses
 import shelve
@@ -425,20 +425,21 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
 
     def genRECIST(self):
         self.statusbar.showMessage('Generating RECIST worksheets...')
-        RECISTSheet(self.RECISTDir,self.OutDir,self.dirName,self.baseNames,self.StudyRoot)
         try:
             self.StudyRoot #check if patients imported
             try:
                 if self.Calcs == True: #check if calcs performed
-                    RECISTSheet(self.RECISTDir,self.OutDir,self.dirName,self.baseNames,self.StudyRoot)
+                    generate_RECIST_Sheets(self.RECISTDir,self.OutDir,self.dirName,self.baseNames,self.StudyRoot,self.singleSheet.isChecked())
                     QMessageBox.information(self,'Message','RECIST worksheets generated.')
                 elif self.Calcs == False:
                     QMessageBox.information(self,'Message','Please perform RECIST calculations.')
-            except AttributeError:
+            except Exception as e:
                 QMessageBox.information(self,'Message','Please perform RECIST calculations.')
+                print('Error: ',e)
 
-        except Exception:
+        except Exception as e:
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
+            print('Error: ',e)
         self.statusbar.showMessage('Done generating RECIST worksheets.', 1000)
 
     def genConsultLog(self):
@@ -653,4 +654,5 @@ if __name__ == '__main__':
 #CHANGELOG
 #7/6/17 commit 45177f75869b17652c82adaeddd97055c9ff15bc - Added ability to 'append' patient list
 #7/7/17 commit f5c60f23f0f25f3146ac38c2ab8755062d5894a0 - Fixed error where exams were incorrectly marked as containsnoT_NT_NL = True due to faulty logic in BLImporterUIVersion.py around line 140
-#7/11/17 commit 7ae65da84eb97f6e5c3640bd4c8f6e343500b42e = added ablity to export consult log
+#7/11/17 commit 7ae65da84eb97f6e5c3640bd4c8f6e343500b42e - added ablity to export consult log
+#7/12/17 commit 46788ce22a5be2eb805079e429313faab986e305 - modified RECIST gen to print sheets for every exam

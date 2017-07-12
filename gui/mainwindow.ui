@@ -58,7 +58,7 @@
         <x>20</x>
         <y>120</y>
         <width>291</width>
-        <height>101</height>
+        <height>111</height>
        </rect>
       </property>
       <property name="title">
@@ -67,9 +67,9 @@
       <widget class="QWidget" name="verticalLayoutWidget_4">
        <property name="geometry">
         <rect>
-         <x>30</x>
+         <x>20</x>
          <y>20</y>
-         <width>231</width>
+         <width>251</width>
          <height>71</height>
         </rect>
        </property>
@@ -90,6 +90,8 @@
         </item>
        </layout>
       </widget>
+      <zorder>verticalLayoutWidget_4</zorder>
+      <zorder>singleSheet</zorder>
      </widget>
      <widget class="QGroupBox" name="groupBox_4">
       <property name="geometry">
@@ -162,7 +164,7 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>230</y>
+        <y>240</y>
         <width>291</width>
         <height>61</height>
        </rect>
@@ -188,9 +190,9 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>300</y>
+        <y>310</y>
         <width>291</width>
-        <height>131</height>
+        <height>161</height>
        </rect>
       </property>
       <property name="title">
@@ -201,11 +203,18 @@
         <rect>
          <x>30</x>
          <y>20</y>
-         <width>231</width>
-         <height>101</height>
+         <width>236</width>
+         <height>127</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QCheckBox" name="singleSheet">
+          <property name="text">
+           <string>RECIST Sheet for current exam only</string>
+          </property>
+         </widget>
+        </item>
         <item>
          <widget class="QPushButton" name="generateRECIST">
           <property name="text">
@@ -234,9 +243,9 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>440</y>
+        <y>480</y>
         <width>291</width>
-        <height>81</height>
+        <height>71</height>
        </rect>
       </property>
       <property name="title">
@@ -248,7 +257,7 @@
          <x>29</x>
          <y>20</y>
          <width>231</width>
-         <height>51</height>
+         <height>41</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_6">
