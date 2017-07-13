@@ -149,35 +149,8 @@ class Exam:
 
 class Lesion:
     #class module for the Lesion datatype
-    def __init__(
-                self, 
-                # fu, 
-                # name, 
-                # tool, 
-                # desc, 
-                # target, 
-                # subtype, 
-                # series,
-                # slicenum, 
-                # recistdia, 
-                # longdia, 
-                # shortdia,
-                # creator
-                ):
-        # self.fu = fu
-        # self.name = name
-        # self.tool = tool #string
-        # self.desc = desc
-        # self.target = target #A STRING, either 'Target','Non-Target','Unspecified', or 'New Lesion' which is set by ENABLE (New Lesion is not a PACS option)
-        # self.subtype = subtype #lesion sub type (ie lung, lymph, etc)
-        # self.series = series
-        # self.slice = slicenum
-        # self.recistdia = recistdia #cm (rounded)
-        # self.longdia = longdia #cm (unrounded)
-        # self.shortdia = shortdia #cm (unrounded)
-        # self.creator = creator
-
-
+    def __init__(self):
+        
         #variables to be set after obj initialization
         self.volume = 0 #cm^3 (unrounded)
         self.humean = 0 #HU

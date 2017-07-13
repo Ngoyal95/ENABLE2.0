@@ -205,21 +205,6 @@ def extractLesionData(df,index,exam,columnNames):
     targetStr = str(df.get_value(index, 'Target')).lower()
     lesionDesc = str(df.get_value(index, 'Description')).lower()
 
-    # lesion = BLDataClasses.Lesion(
-    #                             str(df.get_value(index, 'Follow-Up')), 
-    #                             str(df.get_value(index, 'Name')), 
-    #                             str(df.get_value(index, 'Tool')),
-    #                             str(df.get_value(index, 'Description')), 
-    #                             str(df.get_value(index, 'Target')), 
-    #                             str(df.get_value(index, 'Sub-Type')),
-    #                             int(df.get_value(index, 'Series')), 
-    #                             int(df.get_value(index, 'Slice#')), 
-    #                             round(float(df.get_value(index, 'RECIST Diameter (mm)')),2),
-    #                             round(float(df.get_value(index, 'Long Diameter (mm)')),2), 
-    #                             round(float(df.get_value(index,'Short Diameter (mm)')),2),
-    #                             str(df.get_value(index,'Creator'))  
-    #                             )
-
     lesion = BLDataClasses.Lesion()
     params = {}
     for header in columnNames:
@@ -242,17 +227,8 @@ def extractLesionData(df,index,exam,columnNames):
         lesionType = 'Unspecified'
 
     params['Target'] = lesionType
-
-    # if bool(NLcheck.search(str(df.get_value(index, 'Description')))):
-    #     lesion.add_newlesion(True)
-    #     lesion.set_target('New lesion')
-    #     exam.add_containsnewlesion(True) #exam contains a new lesion, exclude from best response determination
-    
+  
     lesion.add_params(params)
-    # if 'HU Mean (HU)' in columnNames:
-    #     lesion.add_humean(float(df.get_value(index,'HU Mean (HU)')))
-    # if 'Volume (mm³)' in columnNames:
-    #     lesion.add_volume(round(float(df.get_value(index, 'Volume (mm³)')),2))
 
     return lesion
 
