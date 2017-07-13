@@ -88,20 +88,20 @@ def RECISTSheet(RECISTDir, OutDir, patient, exam, file):
     totNumLesion = len(exam.lesions)
     numLesion = 0
     for lesion in exam.lesions:
-        if lesion.target.lower() != 'unspecified':
+        if lesion.params['Target'].lower() != 'unspecified':
             numLesion += 1
 
     for i in range(0,numLesion):
         row = i+1
-        table.cell(row,1).text = exam.lesions[i].desc
-        table.cell(row,2).text = exam.lesions[i].target
+        table.cell(row,1).text = exam.lesions[i].params['Description']
+        table.cell(row,2).text = exam.lesions[i].params['Target']
 
         if exam.lesions[i].newlesion == True:
             table.cell(row,3).text = "New Lesion"
 
         table.cell(row,4).text = exam.modality
-        table.cell(row,6).text = (str(exam.lesions[i].series) + '/' + str(exam.lesions[i].slice))
-        table.cell(row,7).text = str(round(exam.lesions[i].recistdia/10,1)) #convert to cm, round to tenths
+        table.cell(row,6).text = (str(exam.lesions[i].params['Series']) + '/' + str(exam.lesions[i].params['Slice#']))
+        table.cell(row,7).text = str(round(exam.lesions[i].params['RECIST Diameter (mm)']/10,1)) #convert to cm, round to tenths
         table.cell(row,8).text = exam.date
 
     #Print response data

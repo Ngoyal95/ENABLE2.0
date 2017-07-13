@@ -29,13 +29,14 @@ def BLImport(df, root, dirName, baseNames):
         columnNames_Update = [re.sub("\\s+(?=[^()]*\\))", "", x) for x in columnNames] #remove whitespace in prentheses (if present)
         renameCols = dict(zip(columnNames,columnNames_Update)) #dict for renaming columns
         dTemp = dTemp.rename(columns = renameCols)
-
         ptname = dTemp.get_value(1,'Patient Name') #get patient name before cleaning, always in same row 
         
         #NOTE: When this line is included, the days/weeks from baseline will be incorrectly determined for any exam which does not have T, NT, NL (program crashes)
         #dTemp = dropData(dTemp) #drop unnecessary rows (ie not Target or Non-Target or new lesions)
         
         root.add_patient({key:BLDataClasses.Patient(MRN,SID,ptname,columnNames_Update)}) #add patient to the patients dict under the root
+        columnNames_Update.remove("Study Description") #remove these headers for lesion data extraction
+        columnNames_Update.remove("Patient Name")
         extractData(dTemp,key,root,columnNames_Update)
         df.append(dTemp) #append the BL to the overall list of BLs
     pd.DataFrame(df)
@@ -102,7 +103,7 @@ def extractData(df,ID,root,columnNames):
 
         elif ~pd.isnull(lesionHeader): #found a lesion, add to current exam
             lesionCount+=1
-            link.exams[examCount].add_lesion(extractLesionData(df,index,link.exams[examCount]))
+            link.exams[examCount].add_lesion(extractLesionData(df,index,link.exams[examCount],columnNames))
             
             if date_modality_Flag == True:
                 #set the date and modality of exam, also get scan area, and check if is before baseline
@@ -130,18 +131,18 @@ def extractData(df,ID,root,columnNames):
         #-----Organize lesions by Target, then Non-Target, then NL, then unspec.; also get all clinician names who measured----#
         numLesion = 0 #number of T,NT,or NL lesions
         for lesion in exam.lesions:
-            if lesion.target.lower() != 'unspecified':
+            if lesion.params['Target'].lower() != 'unspecified':
                 numLesion += 1
 
         #NOTE: THIS STILL WORKS EVEN IF WE DROP THE ROWS WHICH ARE UNSPEC. LESIONS (OR BLANK 'Target' FIELD)
-        exam.lesions.sort(key=lambda x:x.target, reverse = False) #sort in order NewLesion,NonTarget,Target,Unspec
+        exam.lesions.sort(key=lambda x:x.params['Target'], reverse = False) #sort in order NewLesion,NonTarget,Target,Unspec
         ptA = exam.lesions[:numLesion] #slice to extract the Newlesion,nontarget,target lesions
-        ptA.sort(key = lambda x:x.target, reverse = True) #reverse alphabetize the slice
+        ptA.sort(key = lambda x:x.params['Target'], reverse = True) #reverse alphabetize the slice
         exam.lesions = ptA + exam.lesions[numLesion:] #append to the Unspec. lesions
         #Now order of list of lesions  is T,NT,NL,Unspec. (needed for proper recist sheet printing)
 
         #------Get all names of people who measured in the exam-----#
-        measurers = list(set([lesion.creator for lesion in exam.lesions]))
+        measurers = list(set([lesion.params['Creator'] for lesion in exam.lesions]))
         creators = ', '.join(map(str,measurers))
         exam.measuredby = creators
 
@@ -151,13 +152,13 @@ def extractData(df,ID,root,columnNames):
         beforeBaseline = False #used to determine which exams to ignore (i.e they are before baseline and were exported as such (so they have a -# days from baseline))
         for lesion in exam.lesions:
             
-            lymph = 1 #set to 0 if any lymph short axis is >1cm
-            if(lesion.subtype == 'Lymph'):
-                if lesion.shortdia > 1:
+            lymph = 1 #set to 0 if any lymph short axis is >10mm (1cm)
+            if(lesion.params['Sub-Type'] == 'Lymph'):
+                if lesion.params['Short Diameter (mm)'] > 10:
                     lymph = 0
             exam.lymphsize = bool(lymph) #sets lymphsize = True if all lymph have short axis < 1cm, else False
             
-            if (lesion.target.lower() == 'target' or lesion.target.lower == 'non-target' or lesion.newlesion == True):
+            if (lesion.params['Target'].lower() == 'target' or lesion.params['Target'].lower() == 'non-target' or lesion.newlesion == True):
                 detNoLs = False
         
         exam.add_containsnoT_NT_NL(detNoLs) #set, defaults to False if we find T, NT, or NL
@@ -188,7 +189,7 @@ def extractData(df,ID,root,columnNames):
     #at this point all patient data has been stored in datastructures held by StudyRoot
     #next: Perform RECIST Calcs **** DONE WITH SEPERATE BUTTON IN GUI *****
 
-def extractLesionData(df,index,exam):
+def extractLesionData(df,index,exam,columnNames):
     '''
     Function used to pull the data for a lesion from the bookmark list.
     Data pulled depends on what fields are available in the BL.
@@ -197,38 +198,62 @@ def extractLesionData(df,index,exam):
 
     #check for lesion type - if not Target, Non-Target, or New lesion, call it Unspecified
         #Note: New lesions will be marked as unspecified, but later (at end of this function) they are marked as NL
-    targetStr = str(df.get_value(index, 'Target')).lower()
-    if targetStr == 'target':
-        lesionType = 'Target'
-    elif targetStr == 'non-target':
-        lesionType = 'Non-Target'
-    else:
-        lesionType = 'Unspecified'
-
-    lesion = BLDataClasses.Lesion(
-                                str(df.get_value(index, 'Follow-Up')), 
-                                str(df.get_value(index, 'Name')), 
-                                str(df.get_value(index, 'Tool')),
-                                str(df.get_value(index, 'Description')), 
-                                lesionType, 
-                                str(df.get_value(index, 'Sub-Type')),
-                                int(df.get_value(index, 'Series')), 
-                                int(df.get_value(index, 'Slice#')), 
-                                round(float(df.get_value(index, 'RECIST Diameter (mm)')),2),
-                                round(float(df.get_value(index, 'Long Diameter (mm)')),2), 
-                                round(float(df.get_value(index,'Short Diameter (mm)')),2),
-                                round(float(df.get_value(index, 'Volume (mm³)')),2), 
-                                #float(df.get_value(index,'HU Mean (HU)')), 
-                                str(df.get_value(index,'Creator'))  
-                                )
-
+    tsearch = re.compile('\s?target\s?|\st\s?', re.IGNORECASE)
+    ntsearch = re.compile('\s?non-target\s?|\snt\s?|\snon target\s?', re.IGNORECASE)
     NLcheck = re.compile('\s?new lesion\s?|\snl\s?', re.IGNORECASE)
+
+    targetStr = str(df.get_value(index, 'Target')).lower()
+    lesionDesc = str(df.get_value(index, 'Description')).lower()
+
+    # lesion = BLDataClasses.Lesion(
+    #                             str(df.get_value(index, 'Follow-Up')), 
+    #                             str(df.get_value(index, 'Name')), 
+    #                             str(df.get_value(index, 'Tool')),
+    #                             str(df.get_value(index, 'Description')), 
+    #                             str(df.get_value(index, 'Target')), 
+    #                             str(df.get_value(index, 'Sub-Type')),
+    #                             int(df.get_value(index, 'Series')), 
+    #                             int(df.get_value(index, 'Slice#')), 
+    #                             round(float(df.get_value(index, 'RECIST Diameter (mm)')),2),
+    #                             round(float(df.get_value(index, 'Long Diameter (mm)')),2), 
+    #                             round(float(df.get_value(index,'Short Diameter (mm)')),2),
+    #                             str(df.get_value(index,'Creator'))  
+    #                             )
+
+    lesion = BLDataClasses.Lesion()
+    params = {}
+    for header in columnNames:
+        if header == 'Series' or header == 'Slice#':
+            params[header] = int(df.get_value(index, header))
+        else:
+            params[header] = df.get_value(index, header)
+       
     
-    if bool( NLcheck.search(str(df.get_value(index,'Description'))) ):
+    if targetStr == 'target' or bool(tsearch.search(str(df.get_value(index, 'Description')))):
+        lesionType = 'Target'
+    elif targetStr == 'non-target'or bool(ntsearch.search(str(df.get_value(index, 'Description')))):
+        lesionType = 'Non-Target'
+    elif bool(NLcheck.search(str(df.get_value(index, 'Description')))):
+        lesionType = 'New Lesion'
         lesion.add_newlesion(True)
         lesion.set_target('New lesion')
         exam.add_containsnewlesion(True) #exam contains a new lesion, exclude from best response determination
+    else:
+        lesionType = 'Unspecified'
+
+    params['Target'] = lesionType
+
+    # if bool(NLcheck.search(str(df.get_value(index, 'Description')))):
+    #     lesion.add_newlesion(True)
+    #     lesion.set_target('New lesion')
+    #     exam.add_containsnewlesion(True) #exam contains a new lesion, exclude from best response determination
     
+    lesion.add_params(params)
+    # if 'HU Mean (HU)' in columnNames:
+    #     lesion.add_humean(float(df.get_value(index,'HU Mean (HU)')))
+    # if 'Volume (mm³)' in columnNames:
+    #     lesion.add_volume(round(float(df.get_value(index, 'Volume (mm³)')),2))
+
     return lesion
 
 def extractDescription(date,time,modality,lesionHeader):

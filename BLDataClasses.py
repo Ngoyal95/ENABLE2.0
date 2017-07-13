@@ -151,41 +151,51 @@ class Lesion:
     #class module for the Lesion datatype
     def __init__(
                 self, 
-                fu, 
-                name, 
-                tool, 
-                desc, 
-                target, 
-                subtype, 
-                series,
-                slicenum, 
-                recistdia, 
-                longdia, 
-                shortdia, 
-                volume, 
-                #humean, 
-                creator
+                # fu, 
+                # name, 
+                # tool, 
+                # desc, 
+                # target, 
+                # subtype, 
+                # series,
+                # slicenum, 
+                # recistdia, 
+                # longdia, 
+                # shortdia,
+                # creator
                 ):
-        self.fu = fu
-        self.name = name
-        self.tool = tool #string
-        self.desc = desc
-        self.target = target #A STRING, either 'Target','Non-Target','Unspecified', or 'New Lesion' which is set by ENABLE (New Lesion is not a PACS option)
-        self.subtype = subtype #lesion sub type (ie lung, lymph, etc)
-        self.series = series
-        self.slice = slicenum
-        self.recistdia = recistdia #cm (rounded)
-        self.longdia = longdia #cm (unrounded)
-        self.shortdia = shortdia #cm (unrounded)
-        self.volume = volume #cm^3 (unrounded)
-        #self.humean = humean #HU
-        self.creator = creator
+        # self.fu = fu
+        # self.name = name
+        # self.tool = tool #string
+        # self.desc = desc
+        # self.target = target #A STRING, either 'Target','Non-Target','Unspecified', or 'New Lesion' which is set by ENABLE (New Lesion is not a PACS option)
+        # self.subtype = subtype #lesion sub type (ie lung, lymph, etc)
+        # self.series = series
+        # self.slice = slicenum
+        # self.recistdia = recistdia #cm (rounded)
+        # self.longdia = longdia #cm (unrounded)
+        # self.shortdia = shortdia #cm (unrounded)
+        # self.creator = creator
+
 
         #variables to be set after obj initialization
+        self.volume = 0 #cm^3 (unrounded)
+        self.humean = 0 #HU
         self.newlesion = False #False unless set to True
+
+        self.params = {} #dictionary of parameters, populated according to the column names present in the Bookmark List
 
     def add_newlesion(self, newlesion):
         self.newlesion = newlesion #set to True if new lesion found
 
     def set_target(self, target):
         self.target = target #use when need to change the target status of a lesion (i.e for new lesions)
+
+    def add_humean(self,humean):
+        self.humean = humean
+    
+    def add_volume(self,volume):
+        self.volume = volume
+
+    def add_params(self,params):
+        self.params = params

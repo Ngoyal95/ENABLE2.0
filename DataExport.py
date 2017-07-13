@@ -11,12 +11,10 @@ from pprint import pprint
 
 #### EXCEL (SINGLE SPREADSHEETS AND COMPILED) ####
 def exportToExcel(StudyRoot,OutDir):
-    """
-    Function exports
-    -all patient data (for patients who ignore == False) under the StudyRoot to an excel spreadsheet (Compiled data set)
-    -individual patientexcel spreasheets
-    -properly compiled values for graph generation
-    """
+    '''
+    Function exports all patient data (for patients who ignore == False) under the StudyRoot to an excel spreadsheet (Compiled data set),
+    individual patientexcel spreasheets, and properly compiled values for graph generation
+    '''
     colHeaders = ['Exam','Date','Modality','Follow-Up','Name','Tool',\
     'Description','Target','Sub-Type','Series','Slice#','RECIST Diameter (cm)', \
     'Long Diameter (cm)','Short Diameter (cm)','Volume (cm³)','HU Mean (HU)','Creator', \
@@ -41,9 +39,9 @@ def exportToExcel(StudyRoot,OutDir):
     try:
         compileWb.save(OutDir+'/'+'CompiledData.xlsx')
     except PermissionError:
-        QMessageBox.warning(None,'Error!','Could not save Compiled Data spreadsheet because the file is already open. Please close file and spreadsheet export')
+        QMessageBox.warning(None,'Error!','Could not save Compiled Data spreadsheet because the file is already open. Please close file and repeat spreadsheet export')
 
-def mapPtDataExcel(wsP,wsC,compRow,patient,colHeaders):
+def mapPtDataExcel(wsP, wsC, compRow, patient, colHeaders):
     #map data from patient object to a spreadsheet
     ptRow = 1 #index used for printing single pt sheets, resets at loop end
     numRows = len(patient.exams.keys()) #total number of rows for a patient (exams + lesions)
@@ -204,15 +202,6 @@ def exportPlotData(StudyRoot,OutDir):
 
     #### ---- Swimmer ---- ####
 
-
-
-
-
-
-
-
-
-
     try:
         dataWb.save(OutDir+'/'+'plottingData.xlsx')
     except PermissionError:
@@ -291,20 +280,20 @@ def exportToLog(RECISTDir,OutDir,StudyRoot,vals):
     exam = next((x for key,x in patient.exams.items() if x.date == vals[6]), None)
     
     table = template.tables[3]
-    table.cell(0,1).text = exam.modality
+    table.cell(0,1).text = exam.modality + ' - ' + exam.description
     table.cell(0,4).text = exam.date
 
     table = template.tables[4] #lesion data table
     #count number T,NT,NL lesions
     lesionCount = 0
     for lesion in exam.lesions:
-        if lesion.target.lower() != 'unspecified':
+        if lesion.params['Target'].lower() != 'unspecified':
             lesionCount += 1
     
     for i in range(0,lesionCount):
         lesionData = [
-                    exam.lesions[i].target, exam.modality, exam.lesions[i].desc, \
-                    exam.lesions[i].recistdia, exam.lesions[i].series, exam.lesions[i].slice]
+                    exam.lesions[i].params['Target'], exam.modality, exam.lesions[i].params['Description'], \
+                    round(exam.lesions[i].params['RECIST Diameter (mm)']/10,2), exam.lesions[i].params['Series'], exam.lesions[i].params['Slice#']]
         for l in range(0,6):
             col = l+1
             row = i+1

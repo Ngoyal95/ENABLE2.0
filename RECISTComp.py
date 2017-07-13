@@ -5,8 +5,9 @@ from pprint import pprint
 from datetime import date
 
 def RECISTComp(patient):
-    #module to compute the RECIST values, takes the a patient obj as argument
-
+    '''
+    Function computes RECIST values
+    '''
     tsum = 0
     ntsum = 0
     for key, exam in patient.exams.items(): #iterate over exam objects in the patient obj
@@ -14,11 +15,11 @@ def RECISTComp(patient):
 
             #Note that if an exam has a new lesion, the diameter of the new lesion is not added to either target sum or non target sum
             #Also skip lesions who have .target == 'Unspecified'
-            if lesion.tool.lower() == 'two diameters' or lesion.tool.lower() == 'line': #don't want to add any other type of segmentation (single line, or volume)
-                if lesion.target.lower() == 'target':
-                    tsum += round(lesion.recistdia/10,1) #convert to cm and round
-                elif lesion.target.lower() == 'non-target':
-                    ntsum += round(lesion.recistdia/10,1)
+            if lesion.params['Tool'].lower() == 'two diameters' or lesion.params['Tool'].lower() == 'line': #don't want to add any other type of segmentation (single line, or volume)
+                if lesion.params['Target'].lower() == 'target':
+                    tsum += round(round(lesion.params['RECIST Diameter (mm)'],2)/10, 1) #convert to cm and round
+                elif lesion.params['Target'].lower() == 'non-target':
+                    ntsum += round(round(lesion.params['RECIST Diameter (mm)'],2)/10, 1)
 
         exam.add_RECISTsums(tsum, ntsum) #store sums after all lesion diameters added up
         tsum = 0

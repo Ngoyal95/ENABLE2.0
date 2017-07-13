@@ -274,20 +274,22 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
 
     def recistCalculations(self):
         #perform recist calculations by passing each patient in self.StudyRoot to the RECISTComp function
+        
         try:
             getattr(self,'StudyRoot')
             self.Calcs = True
             self.statusbar.showMessage('Performing RECIST calculations')
             for key, patient in self.StudyRoot.patients.items():
                 RECISTComp(patient) #perform RECIST computations for the selected patient
-                pprint(patient.exams)
-                for key,exam in patient.exams.items():
-                    pprint(vars(exam))
-                    for lesion in exam.lesions:
-                        pprint(vars(lesion))
+                # pprint(patient.exams)
+                # for key,exam in patient.exams.items():
+                #     pprint(vars(exam))
+                #     for lesion in exam.lesions:
+                #         pprint(vars(lesion))
             self.statusbar.showMessage('Done with RECIST calculations!', 1000)
-        except AttributeError:
+        except Exception as e:
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
+            print("Error: ",e)
             self.Calcs = False
 
     def removeSelectedPatient(self):
