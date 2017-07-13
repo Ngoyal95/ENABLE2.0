@@ -135,4 +135,4 @@ def RECISTSheet(RECISTDir, OutDir, patient, exam, file):
         template.save(OutDir + r'/MRN' + MRN + "_" + SID +  r'/MRN' + MRN + "_" + SID + "_Exam_" + convDate(exam.date) + ".docx") #save word document
     except Exception as e:
         #throw error if file open
-        print('Error: ',e)
+        print('Error: ', e)

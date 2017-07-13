@@ -16,46 +16,27 @@ def BLImport(df, root, dirName, baseNames):
     '''
     Function to import patient data from a bookmark list and store in data classes (see BLImporterUIVersion.py)
     '''
-
-    # renameCols = {'Unnamed: 1':'Lesion Header','RECIST Diameter ( mm )':'RECIST Diameter (cm)', 'Long Diameter ( mm )':'Long Diameter (cm)',\
-    #             'Short Diameter ( mm )':'Short Diameter (cm)','Volume ( mm³ )':'Volume (cm³)','HU Mean ( HU )':'HU Mean (HU)'}
-    
-    # renameCols = {'Unnamed: 1':'Lesion Header','RECIST Diameter ( mm )':'RECIST Diameter (mm)', 'Long Diameter ( mm )':'Long Diameter (mm)',\
-    #             'Short Diameter ( mm )':'Short Diameter (mm)','Volume ( mm³ )':'Volume (mm³)','HU Mean ( HU )':'HU Mean (HU)'}
-    
-    renameCols = {'Unnamed: 1':'Lesion Header','RECIST Diameter ( mm )':'RECIST Diameter (mm)', 'Long Diameter ( mm )':'Long Diameter (mm)',\
-                'Short Diameter ( mm )':'Short Diameter (mm)','Volume ( mm³ )':'Volume (mm³)'}
-     
-    #colsA = list({'RECIST Diameter (cm)','Long Diameter (cm)','Short Diameter (cm)'})
-    #colsB = list({'RECIST Diameter (cm)','Long Diameter (cm)','Short Diameter (cm)','Volume (cm³)'})
-
-    ptname = ''
     for file in baseNames:
-        #fist check if patient already in dict so we don't duplicate
         MRN,SID = getMRNSID(file)
         key = (MRN+r'/'+SID)
-        #if key not in root.patients.keys():
         xl = pd.ExcelFile(dirName + r'/'+file)
         dTemp = xl.parse()
         pd.DataFrame(dTemp)
 
         #correct column headers
-        dTemp = dTemp.rename(columns = {'Unnamed: 1':'Lesion Header'}) #add a column name to the blank column which has the data about exam date, time, modality, description
+        dTemp = dTemp.rename(columns = {'Unnamed: 1':'Lesion Header'}) #name to the blank column which has the data about exam date, time, modality, description
         columnNames = list(dTemp) #get a list of the column headers
+        columnNames_Update = [re.sub("\\s+(?=[^()]*\\))", "", x) for x in columnNames] #remove whitespace in prentheses (if present)
+        renameCols = dict(zip(columnNames,columnNames_Update)) #dict for renaming columns
         dTemp = dTemp.rename(columns = renameCols)
-
-        #correct mm to cm
-        #dTemp[colsA] = dTemp[colsA].apply(lambda x: x/10, 0) #mm --> cm, no rounding
-        #dTemp['Volume (cm³)'] = dTemp['Volume (cm³)'].apply(lambda x: x/1000, 0) #mm^3 --> cm^3
-        #dTemp[colsB] = dTemp[colsB].round(decimals=1) #round to one decimal place
 
         ptname = dTemp.get_value(1,'Patient Name') #get patient name before cleaning, always in same row 
         
         #NOTE: When this line is included, the days/weeks from baseline will be incorrectly determined for any exam which does not have T, NT, NL (program crashes)
         #dTemp = dropData(dTemp) #drop unnecessary rows (ie not Target or Non-Target or new lesions)
         
-        root.add_patient({key:BLDataClasses.Patient(MRN,SID,ptname,columnNames)}) #add patient to the patients dict under the root
-        extractData(dTemp,key,root)
+        root.add_patient({key:BLDataClasses.Patient(MRN,SID,ptname,columnNames_Update)}) #add patient to the patients dict under the root
+        extractData(dTemp,key,root,columnNames_Update)
         df.append(dTemp) #append the BL to the overall list of BLs
     pd.DataFrame(df)
     
@@ -88,7 +69,7 @@ def getMRNSID(file):
     SID = regSID.search(file).group()
     return MRN,SID
 
-def extractData(df,ID,root):
+def extractData(df,ID,root,columnNames):
     ''' 
     ExtractData function extracts patient tumor data from the patient Bookmark List.
     Data is first stored into pandas dataframe and then into custom datastructures in BLImporterUIVersion.py 
