@@ -280,7 +280,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             self.statusbar.showMessage('Performing RECIST calculations')
             for key, patient in self.StudyRoot.patients.items():
                 RECISTComp(patient) #perform RECIST computations for the selected patient
-                #pprint(patient.exams)
+                pprint(patient.exams)
                 for key,exam in patient.exams.items():
                     pprint(vars(exam))
                     for lesion in exam.lesions:

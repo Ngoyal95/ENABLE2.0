@@ -16,7 +16,7 @@ def generate_RECIST_Sheets(RECISTDir, OutDir, dirName, baseNames, StudyRoot,sing
         MRN, SID = getMRNSID(file) #gets MRN and SID from the file name
         key = MRN+r'/'+SID #patient key
         patient = StudyRoot.patients[key] #get a specific patient
-
+        print(patient.name,patient.mrn)
         if patient.ignore == False:
             #Patient is not ignored, user wants to include them in outputs
             if singleSheet == True:

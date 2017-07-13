@@ -54,11 +54,12 @@ class Exam:
 
         #variables to be set after obj initialization
         self.lesions = [] #list storing lesions
+        self.time = ''
         self.date = '' #exam date
         self.modality = '' #exam modality (CT, MRI, PET, PET-CT)
         self.baseline = False #is it a baseline exam (boolean)
         self.current = False #is it the current exam (most recent)
-        self.examarea = '' #CTCHABDPEL for example
+        self.description = '' #CTCHABDPEL for example
         
         self.ignore = False
         '''NOTE:
@@ -90,14 +91,17 @@ class Exam:
         self.daysfromB = 0
         self.weeksfromB = 0
 
-    def add_examarea(self,examarea):
-        self.examarea = examarea
+    def add_description(self,description):
+        self.description = description
 
     def add_lesion(self, lesion): #lesion is a pointer to a lesion
         self.lesions.append(lesion)
 
+    def add_time(self,time):
+        self.time = time #format HH:MM AM/PM
+
     def add_date(self, date):
-        self.date = date #update the date
+        self.date = date #format MM/DD/YYYY
 
     def add_modality(self, modality):
         self.modality = modality #update modality

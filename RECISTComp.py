@@ -16,7 +16,6 @@ def RECISTComp(patient):
             #Also skip lesions who have .target == 'Unspecified'
             if lesion.tool.lower() == 'two diameters' or lesion.tool.lower() == 'line': #don't want to add any other type of segmentation (single line, or volume)
                 if lesion.target.lower() == 'target':
-                    print("Target",key)
                     tsum += lesion.recistdia
                 elif lesion.target.lower() == 'non-target':
                     ntsum += lesion.recistdia

@@ -10,6 +10,7 @@ import sys
 import xlrd
 from pprint import pprint
 from RECISTComp import RECISTComp
+from string import punctuation
 
 def BLImport(df, root, dirName, baseNames):
     #function to open a bookmark list, store in in pandas dataframes, and clean the dataframes
@@ -91,35 +92,44 @@ def extractData(df,ID,root):
     examCount = 0
     lesionCount = 0
     date_modality_Flag = False #set to True when new exam found, so need to find date + modality
-    dateReg = re.compile(r'\d+/\d+/\d+')
+    dateReg = re.compile(r'^\d+/\d+/\d+')  #format MM/DD/YYYY, check at beginning of str
+    timeReg = re.compile(r'\d+:\d+ \w\w')  #format HH:MM AM/PM
     beforeBaselineReg = re.compile(r'-\d+') #used to determine if an exam should be ignored
 
     #----Populate datastructure with patients' data----#
     for index, row in df.iterrows(): #iterate through dataframe rows to populate data structures
         SIUID = str(df.get_value(index,'Study Description'))
-        lesionCheck = str(df.get_value(index,'Lesion Header')) #example: '10/10/2014 3:06 PM, CT, CTCHABDPEL (51 Days from Baseline)'
+        lesionHeader = str(df.get_value(index,'Lesion Header')) #example: '10/10/2014 3:06 PM, CT, CTCHABDPEL (51 Days from Baseline)'
         
         if "STUDY INSTANCE" in SIUID: #locate a new exam
             examCount += 1
             date_modality_Flag = True
-            link.add_exam({examCount:BLDataClasses.Exam(index,SIUID.split("STUDY INSTANCE UID: ",1)[1])}) #add an exam to patient's exam list, store the 'index', and SIUID
+            link.add_exam({examCount:BLDataClasses.Exam(index,SIUID.split("STUDY INSTANCE UID: ",1)[1].strip())}) #add an exam to patient's exam list, store the 'index', and SIUID
             lesionCount = 0
 
-        elif ~pd.isnull(lesionCheck): #found a lesion, add to current exam
+        elif ~pd.isnull(lesionHeader): #found a lesion, add to current exam
             lesionCount+=1
             link.exams[examCount].add_lesion(extractLesionData(df,index,link.exams[examCount]))
             
             if date_modality_Flag == True:
                 #set the date and modality of exam, also get scan area, and check if is before baseline
                 date_modality_Flag = False
-                modality = lesionCheck.split(', ')[1]
-                #examArea = lesionCheck.split(', ')[2].split(' ')[0]
+                modality = lesionHeader.split(', ')[-2] #modality is always 2nd to last entry in the lesionheader
+                date = dateReg.search(str(df.get_value(index,'Lesion Header'))).group()
+                tCheck = timeReg.search(str(df.get_value(index,'Lesion Header')))
+                if tCheck == None:
+                    time = ''
+                else:
+                    time = tCheck.group()
                 
-                link.exams[examCount].add_date(dateReg.search(str(df.get_value(index,'Lesion Header'))).group())
-                link.exams[examCount].add_modality(modality)
-                #link.exams[examCount].add_examarea(examArea)
+                examDescription = extractDescription(date,time,modality,lesionHeader)
 
-                if beforeBaselineReg.search(lesionCheck) is not None:
+                link.exams[examCount].add_date(date)
+                link.exams[examCount].add_time(time)
+                link.exams[examCount].add_modality(modality)
+                link.exams[examCount].add_description(examDescription)
+
+                if beforeBaselineReg.search(lesionHeader) is not None:
                     #exam is before baseline, set it
                     link.exams[examCount].add_ignore(True)    
     
@@ -221,3 +231,16 @@ def extractLesionData(df,index,exam):
         exam.add_containsnewlesion(True) #exam contains a new lesion, exclude from best response determination
     
     return lesion
+
+def extractDescription(date,time,modality,lesionHeader):
+    ''' Strip extraneous data from the 'lesion header' in order to extract the study description
+        typical format is: MM/DD/YYYY HH:MM AM/PM, DESCRIPTION, MODALITY, (body part) (# days from baseline)
+        NOTE: the description might empty!
+    '''
+    str1  = lesionHeader.replace(date,'').replace(lesionHeader.split(', ')[-1],'').replace(modality,'')
+    if time is not '':
+        str1 = str1.replace(time,'') #check because time might be None -> time = '', so we need to check seperately.
+    str1 = re.sub(r'^[^a-zA-Z0-9]*', '',str1) #strip front chars (whitespace and commas)
+    str1 = str1[::-1] #reverse str
+    str1 = re.sub(r'^[^a-zA-Z0-9]*', '',str1) #strip trailing chars (whitespace and commas), now at front of reversed str
+    return str1[::-1]
