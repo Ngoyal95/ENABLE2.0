@@ -196,8 +196,7 @@ def extractLesionData(df,index,exam,columnNames):
     Function creates and returns a lesion object with attributes populated.
     '''
 
-    #check for lesion type - if not Target, Non-Target, or New lesion, call it Unspecified
-        #Note: New lesions will be marked as unspecified, but later (at end of this function) they are marked as NL
+    # Used to check for lesion type - if not Target, Non-Target, or New lesion, call it Unspecified
     tsearch = re.compile('\s?target\s?|\st\s?', re.IGNORECASE)
     ntsearch = re.compile('\s?non-target\s?|\snt\s?|\snon target\s?', re.IGNORECASE)
     NLcheck = re.compile('\s?new lesion\s?|\snl\s?', re.IGNORECASE)
@@ -212,7 +211,6 @@ def extractLesionData(df,index,exam,columnNames):
             params[header] = int(df.get_value(index, header))
         else:
             params[header] = df.get_value(index, header)
-       
     
     if targetStr == 'target' or bool(tsearch.search(str(df.get_value(index, 'Description')))):
         lesionType = 'Target'
@@ -222,11 +220,11 @@ def extractLesionData(df,index,exam,columnNames):
         lesionType = 'New Lesion'
         lesion.add_newlesion(True)
         lesion.set_target('New lesion')
-        exam.add_containsnewlesion(True) #exam contains a new lesion, exclude from best response determination
+        exam.add_containsnewlesion(True) # exam contains a new lesion, exclude from best response determination
     else:
         lesionType = 'Unspecified'
 
-    params['Target'] = lesionType
+    params['Target'] = lesionType # store parameters
   
     lesion.add_params(params)
 

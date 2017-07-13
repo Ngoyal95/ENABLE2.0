@@ -105,7 +105,6 @@ def pullLesionData(lesion):
     lesion.subtype,lesion.series,lesion.slice,round(lesion.recistdia/10,1),lesion.longdia,\
     lesion.shortdia,lesion.volume,lesion.humean,lesion.creator]
 
-
 #### PLOT DATA GEN AND EXPORT ####
 def waterfallPlot(StudyRoot):
     #this function will return two lists: one containig plotting data, and a key relating patients to their number

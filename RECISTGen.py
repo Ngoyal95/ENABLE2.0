@@ -93,8 +93,8 @@ def RECISTSheet(RECISTDir, OutDir, patient, exam, file):
 
     for i in range(0,numLesion):
         row = i+1
-        table.cell(row,1).text = exam.lesions[i].params['Description']
-        table.cell(row,2).text = exam.lesions[i].params['Target']
+        table.cell(row,1).text = str(exam.lesions[i].params['Description'])
+        table.cell(row,2).text = str(exam.lesions[i].params['Target'])
 
         if exam.lesions[i].newlesion == True:
             table.cell(row,3).text = "New Lesion"

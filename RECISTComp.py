@@ -56,11 +56,11 @@ def RECISTComp(patient):
 
         if exam.baseline == False:
             if (currTRS > 0 and baselineTRS != 0):
-                tfrombaseline = round(100*(currTRS-baselineTRS)/baselineTRS)
+                tfrombaseline = round(100*(currTRS-baselineTRS)/baselineTRS,0)
             if(currTRS > 0 and BR != 0):
-                tfrombestresponse = round(100*(currTRS-BR)/BR)
+                tfrombestresponse = round(100*(currTRS-BR)/BR,0)
             if(currNTRS > 0 and baselineNTRS != 0):
-                ntfrombaseline = round(100*(currNTRS-baselineNTRS)/baselineNTRS)
+                ntfrombaseline = round(100*(currNTRS-baselineNTRS)/baselineNTRS,0)
             
             exam.add_percentchanges(ntfrombaseline,tfrombaseline,tfrombestresponse)
 
