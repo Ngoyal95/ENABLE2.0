@@ -101,7 +101,7 @@ def RECISTSheet(RECISTDir, OutDir, patient, exam, file):
 
         table.cell(row,4).text = exam.modality
         table.cell(row,6).text = (str(exam.lesions[i].series) + '/' + str(exam.lesions[i].slice))
-        table.cell(row,7).text = str(exam.lesions[i].recistdia)
+        table.cell(row,7).text = str(round(exam.lesions[i].recistdia/10,1)) #convert to cm, round to tenths
         table.cell(row,8).text = exam.date
 
     #Print response data

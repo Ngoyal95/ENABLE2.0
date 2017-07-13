@@ -12,12 +12,19 @@ class StudyRoot:
 
 class Patient:
     #class for a patient
-    def __init__(self, mrn, sid, name):
+    def __init__(
+                self,
+                mrn, 
+                sid,
+                name,
+                fields
+                ):
         #self.name #patient name
         self.mrn = mrn #Medical Record Number
         self.sid = sid #Study ID
         self.exams = {} #dictonary storing exams
         self.name = name
+        self.fields = fields #store the fields present in the BL, needed to determine what data will be imported (it needs to be present)
 
         #set after obj initialization, set in BLImporter.py
         self.bestresponse = 0 #best response
@@ -43,7 +50,7 @@ class Patient:
         self.ignore = ignore
 
 class Exam:
-    #class module for the exam
+    ''' Exam class used to store data about the exam as well as the lesion objects within that exam '''
     def __init__(
                 self, 
                 enum, 

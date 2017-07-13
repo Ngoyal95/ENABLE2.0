@@ -16,11 +16,11 @@ def RECISTComp(patient):
             #Also skip lesions who have .target == 'Unspecified'
             if lesion.tool.lower() == 'two diameters' or lesion.tool.lower() == 'line': #don't want to add any other type of segmentation (single line, or volume)
                 if lesion.target.lower() == 'target':
-                    tsum += lesion.recistdia
+                    tsum += round(lesion.recistdia/10,1) #convert to cm and round
                 elif lesion.target.lower() == 'non-target':
-                    ntsum += lesion.recistdia
+                    ntsum += round(lesion.recistdia/10,1)
 
-        exam.add_RECISTsums(round(tsum/10, 1), round(ntsum/10, 1)) #store sums after all lesion diameters added up
+        exam.add_RECISTsums(tsum, ntsum) #store sums after all lesion diameters added up
         tsum = 0
         ntsum = 0
 

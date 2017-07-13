@@ -13,12 +13,16 @@ from RECISTComp import RECISTComp
 from string import punctuation
 
 def BLImport(df, root, dirName, baseNames):
-    #function to open a bookmark list, store in in pandas dataframes, and clean the dataframes
+    '''
+    Function to import patient data from a bookmark list and store in data classes (see BLImporterUIVersion.py)
+    '''
+
     # renameCols = {'Unnamed: 1':'Lesion Header','RECIST Diameter ( mm )':'RECIST Diameter (cm)', 'Long Diameter ( mm )':'Long Diameter (cm)',\
     #             'Short Diameter ( mm )':'Short Diameter (cm)','Volume ( mm³ )':'Volume (cm³)','HU Mean ( HU )':'HU Mean (HU)'}
     
     # renameCols = {'Unnamed: 1':'Lesion Header','RECIST Diameter ( mm )':'RECIST Diameter (mm)', 'Long Diameter ( mm )':'Long Diameter (mm)',\
     #             'Short Diameter ( mm )':'Short Diameter (mm)','Volume ( mm³ )':'Volume (mm³)','HU Mean ( HU )':'HU Mean (HU)'}
+    
     renameCols = {'Unnamed: 1':'Lesion Header','RECIST Diameter ( mm )':'RECIST Diameter (mm)', 'Long Diameter ( mm )':'Long Diameter (mm)',\
                 'Short Diameter ( mm )':'Short Diameter (mm)','Volume ( mm³ )':'Volume (mm³)'}
      
@@ -36,6 +40,8 @@ def BLImport(df, root, dirName, baseNames):
         pd.DataFrame(dTemp)
 
         #correct column headers
+        dTemp = dTemp.rename(columns = {'Unnamed: 1':'Lesion Header'}) #add a column name to the blank column which has the data about exam date, time, modality, description
+        columnNames = list(dTemp) #get a list of the column headers
         dTemp = dTemp.rename(columns = renameCols)
 
         #correct mm to cm
@@ -48,7 +54,7 @@ def BLImport(df, root, dirName, baseNames):
         #NOTE: When this line is included, the days/weeks from baseline will be incorrectly determined for any exam which does not have T, NT, NL (program crashes)
         #dTemp = dropData(dTemp) #drop unnecessary rows (ie not Target or Non-Target or new lesions)
         
-        root.add_patient({key:BLDataClasses.Patient(MRN,SID,ptname)}) #add patient to the patients dict under the root
+        root.add_patient({key:BLDataClasses.Patient(MRN,SID,ptname,columnNames)}) #add patient to the patients dict under the root
         extractData(dTemp,key,root)
         df.append(dTemp) #append the BL to the overall list of BLs
     pd.DataFrame(df)
@@ -70,8 +76,12 @@ def dropData(df):
 
     return df
 
-def getMRNSID(file): #file arg is a str
-    #extract the MRN and SID from the BL filename (expected format is MRN#xxxxxxx_xx-x-xxxx (7 digit MRN))
+def getMRNSID(file): 
+    '''
+    Function used to pull a patient MRN and protocol (the SID, or Study ID) from the filename, passed as a string.
+    Expected file format contains continguous 7 digit MRN (ie xxxxxxx) and 7 character study protocol (ie xx-x-xxxx) seperated by an underscore.
+    For example: MRNxxxxxxx_xx-x-xxxx is the recommended format.
+    '''
     regMRN = re.compile(r'\d{7}')
     regSID = re.compile(r'\w{2}-\w-\w{4}')
     MRN = regMRN.search(file).group()
@@ -79,9 +89,11 @@ def getMRNSID(file): #file arg is a str
     return MRN,SID
 
 def extractData(df,ID,root):
-    #function pulls patient tumor data from a BL stored in a pandas df, stores in the custom data structures (see BLDataClasses.py)
-    #ID is string MRN+r'/'+SID used to find the patient in the patient dictionary
-    #root is study root
+    ''' 
+    ExtractData function extracts patient tumor data from the patient Bookmark List.
+    Data is first stored into pandas dataframe and then into custom datastructures in BLImporterUIVersion.py 
+    NOTE: 'ID' is string MRN+r'/'+SID used to find the patient in the patient dictionary, and 'root' is the StudyRoot 
+    '''
 
     #need to iterate through the rows of the dataframe, extracting data as we proceed.
         #create a new exam at every instance of "STUDY INSTANCE UID" in Col 'Study Description' (added while parsing)
@@ -196,6 +208,12 @@ def extractData(df,ID,root):
     #next: Perform RECIST Calcs **** DONE WITH SEPERATE BUTTON IN GUI *****
 
 def extractLesionData(df,index,exam):
+    '''
+    Function used to pull the data for a lesion from the bookmark list.
+    Data pulled depends on what fields are available in the BL.
+    Function creates and returns a lesion object with attributes populated.
+    '''
+
     #check for lesion type - if not Target, Non-Target, or New lesion, call it Unspecified
         #Note: New lesions will be marked as unspecified, but later (at end of this function) they are marked as NL
     targetStr = str(df.get_value(index, 'Target')).lower()
@@ -233,9 +251,10 @@ def extractLesionData(df,index,exam):
     return lesion
 
 def extractDescription(date,time,modality,lesionHeader):
-    ''' Strip extraneous data from the 'lesion header' in order to extract the study description
-        typical format is: MM/DD/YYYY HH:MM AM/PM, DESCRIPTION, MODALITY, (body part) (# days from baseline)
-        NOTE: the description might empty!
+    ''' 
+    Strip extraneous data from the 'lesion header' in order to extract the study description
+    typical format is: MM/DD/YYYY HH:MM AM/PM, DESCRIPTION, MODALITY, (body part) (# days from baseline)
+    NOTE: the description might empty!
     '''
     str1  = lesionHeader.replace(date,'').replace(lesionHeader.split(', ')[-1],'').replace(modality,'')
     if time is not '':
