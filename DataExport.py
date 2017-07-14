@@ -1,5 +1,3 @@
-#Module to export data to an excel spreadsheet
-
 import docx
 import time
 import pyqtgraph as pg
@@ -28,11 +26,11 @@ def exportToExcel(StudyRoot,OutDir):
     compRow = 1 #index used for printing info to compiled doc, does not reset at end of loop
     
     for key, patient in StudyRoot.patients.items():
-        #loop to populate single pt sheets and the compiled cohort sheet
+        #populate single pt sheets and the compiled cohort sheet
         ptWb = Workbook()
         wsP = ptWb.active
         compRow = mapPtDataExcel(wsP,wsC,compRow,patient,colHeaders)
-        compRow+=3 #skip rows for next pt
+        compRow+=3 #3 row gap btwn patients
 
         ptWb.save(OutDir+'/'+patient.name+'.xlsx')
 
@@ -42,8 +40,10 @@ def exportToExcel(StudyRoot,OutDir):
         QMessageBox.warning(None,'Error!','Could not save Compiled Data spreadsheet because the file is already open. Please close file and repeat spreadsheet export')
 
 def mapPtDataExcel(wsP, wsC, compRow, patient, colHeaders):
-    #map data from patient object to a spreadsheet
-    ptRow = 1 #index used for printing single pt sheets, resets at loop end
+    '''
+    Map data from patient object to a spreadsheet
+    '''
+    ptRow = 1 #index used for printing single pt sheets
     numRows = len(patient.exams.keys()) #total number of rows for a patient (exams + lesions)
     for key, exam in patient.exams.items():
         if exam.ignore == False:
@@ -95,15 +95,20 @@ def mapPtDataExcel(wsP, wsC, compRow, patient, colHeaders):
     return compRow
 
 def pullExamData(exam,patient):
-    #function to extract exam data and place in list
-    return [exam.enum,exam.date,exam.modality,exam.trecistsum,patient.bestresponse,exam.\
+    '''
+    Extracts exam data and places in list
+    '''
+    return [exam.exam_num,exam.date,exam.modality,exam.trecistsum,patient.bestresponse,exam.\
             ntrecistsum,exam.tfrombaseline,exam.tfrombestresponse,exam.ntfrombaseline,exam.tresponse,exam.ntresponse,exam.overallresponse]
 
 def pullLesionData(lesion):
-    #function to extract lesion data and place in list which is returned
+    ''''
+    Extracts lesion data and place in list
+    '''
     return [lesion.fu,lesion.name,lesion.tool,lesion.desc,lesion.target,\
     lesion.subtype,lesion.series,lesion.slice,round(lesion.recistdia/10,1),lesion.longdia,\
     lesion.shortdia,lesion.volume,lesion.humean,lesion.creator]
+
 
 #### PLOT DATA GEN AND EXPORT ####
 def waterfallPlot(StudyRoot):
@@ -123,7 +128,9 @@ def waterfallPlot(StudyRoot):
     return responses
 
 def spiderPlot(StudyRoot):
-    #return data for spider plot, dict of patients with values as tuple (lists of their target RECIST sum,weeks from baseline)
+    '''
+    Return data for spider plot, dict of patients with values as tuple w/ format (lists of their target RECIST sum,weeks from baseline,days from baseline)
+    '''
     ptData = {}
     popPat = False
     for key,patient in StudyRoot.patients.items():
@@ -139,15 +146,14 @@ def spiderPlot(StudyRoot):
                     deltaTW.append(exam.weeksfromB)
                     deltaTD.append(exam.daysfromB)				
                 except ZeroDivisionError:
-                    popPat = True #dont include the patient
+                    popPat = True #dont include the patient because of bad baseline
                     meas.append(0)
                     deltaTW.append(exam.weeksfromB)
                     deltaTD.append(exam.daysfromB)
                     #QMessageBox.warning(None,'Error!','Could not compute percent change for patient: ' + patient.name + '\nError due to baseline sum = 0')
-
             if popPat == False:
                 ptData[key] = [meas,deltaTW,deltaTD]
-
+    
     return ptData
 
 def swimmerPlot(StudyRoot):
@@ -155,13 +161,15 @@ def swimmerPlot(StudyRoot):
     pass
 
 def exportPlotData(StudyRoot,OutDir):
-    #Exports data for all 3 types of plots (waterfall, spider, swimmer)
+    '''
+    Exports data for all 3 types of plots (waterfall, spider, swimmer) to an Excel spreadsheet
+    '''
     dataWb = Workbook()
-    WF = dataWb.active #use the active sheet (first and only one in the doc, named 'Sheet')
-    WF.title = "Waterfall_Data"
+    WF = dataWb.active
+    WF.title = "Waterfall_Data" #change name first sheet in workbook
 
     ##### ---- Waterfall ---- #####
-    #populate headers
+    #Column headers
     WFHeaders = ['Patient Number','Patient','MRN','Protocol',r'Best response % change from Baseline','Overall RECIST Response','Clinical Response']
     row = 1
     for i in range(0,len(WFHeaders)):
@@ -169,11 +177,7 @@ def exportPlotData(StudyRoot,OutDir):
     row+=1
 
     ptData = []
-    #print relevant pt data to sheet, then order data in worksheet in decreasing % change from baseline
     for key, patient in StudyRoot.patients.items():
-        #get data to print
-        
-        #error handling
         try:
             val = float(((patient.bestresponse-patient.baselinesum)*100)/patient.baselinesum)
         except ZeroDivisionError:
@@ -181,10 +185,9 @@ def exportPlotData(StudyRoot,OutDir):
             QMessageBox.warning(None,'Error!','Could not compute percent change for patient: ' + patient.name + '\nError due to baseline sum = 0')
 
         indivPtData = [patient.name,int(patient.mrn),patient.sid,val,patient.exams[1].overallresponse]
-        #print(indivPtData)
         ptData.append(indivPtData)
 
-    #now reorder patients in ptData list descending %change from baseline
+    #now reorder patients in ptData list descending %change from baseline. Items with None as percent change go to bottom
     ptData.sort(key = lambda x: (x[3] is None, x[3]),reverse=False) #increasing order, NoneType at end
     temp = [x for x in ptData if x[3] is not None]
     temp.sort(key = lambda x: x[3],reverse=True)
@@ -198,7 +201,6 @@ def exportPlotData(StudyRoot,OutDir):
         row+=1
 
     #### ---- Spider ---- ####
-
     #### ---- Swimmer ---- ####
 
     try:
@@ -206,35 +208,31 @@ def exportPlotData(StudyRoot,OutDir):
     except PermissionError:
         QMessageBox.warning(None,'Error!','Could not save Plot Data spreadsheet because the file is already open. Please close file and spreadsheet export')
     
-
 #### LABMATRIX ####
-def exportToLabmatrix(StudyRoot,OutDir,LMClientPath,user,pw):
-    #function to format data for labmatrix and then upload
-    #Function takes the StudyRoot, iterates through all patients (those who do not have ignore == True)
-    #creates their LM spreadsheets (stored in a labmatrix folder with dates), and uploads them via the RadiologyImportClient.jar
-
+def export_to_labmatrix(StudyRoot,OutDir,LMClientPath,user,pw):
+    '''
+    Function to format data for labmatrix and then upload using RadioglogyImportClient.jar.
+    '''
     LMHeaders = []
-    time = time.strftime("%H:%M") #HOUR:MINUTE
+    time = time.strftime("%H:%M")
     day = time.strftime("%d/%m/%Y")
-    LMF = OutDir + "/" + day + "_" + time #labmatrixfolder to save LM spreadsheets to
+    LMF = OutDir + "/" + day + "_" + time #Folder to save LM spreadsheets to
     if not os.path.exists(LMF):
         os.makedirs(LMF)
 
     for key,patient in StudyRoot.items():
-        #iterate over patients to create spreadsheets and upload to LM
         ptWb = Workbook()
         wsP = ptWb.active
-        mapPtDataLM(wsP,patient,LMHeaders)
+        map_labmatrix_data_models(wsP,patient,LMHeaders)
         savePath = LMF + '/' + patient.name + '.xlsx'
-        ptWb.save(LMF + '/' + patient.name + '.xlsx') #save patient sheet
+        ptWb.save(LMF + '/' + patient.name + '.xlsx') #save
+        os.system("java -cp" + LMClientPath + "ImportArgs" + " " + user + " " + pw + " " + savePath) #upload
 
-        #### UPLOAD, runs for each file ####
-        os.system("java -cp" + LMClientPath + "ImportArgs" + " " + user + " " + pw + " " + \
-            savePath)
-
-def mapPtDataLM(wsP,patient,LMHeaders):
+def map_labmatrix_data_models(wsP,patient,LMHeaders):
+    '''
+    Produce data model for upload to Labmatrix
+    '''
     ptRow = 1 #row index for current document
-    #print patient ID info:
     for i in range(0,len(ptData)):
         wsP.cell(row = ptRow, column = i+1).value = ptData[i]
         wsC.cell(row = compRow, column = i+1).value = ptData[i]
@@ -243,9 +241,10 @@ def mapPtDataLM(wsP,patient,LMHeaders):
 
 #### CONSULT LOG ####
 def exportToLog(RECISTDir,OutDir,StudyRoot,vals):
-    #Used to create radiologist consultation log
-    #vals is a list of the following:
-    #[selkey,consultant,phys,date,priorbaseline,baseline,restaging,describe_1,reason_2a,reason_2b,describe_2,comments,time]
+    '''
+    Create radiologist consultation log.
+    Expected format of vals is list of the following: [selkey,consultant,phys,date,priorbaseline,baseline,restaging,describe_1,reason_2a,reason_2b,describe_2,comments,time]
+    '''
     patient = StudyRoot.patients[vals[0]]
     template = docx.Document(RECISTDir+r'/CIPS_Consult_Log.docx')
     

@@ -2,39 +2,42 @@
 #from collections import OrderedDict
 #Revision 6/21/17
 class StudyRoot:
-    #root linking to patients
+    '''
+    StudyRoot class stores dictionary of patients in format {'MRN/SID':patient object} (MRN = ####, SID = ##-X-####)
+    '''
     def __init__(self):
-        self.patients = {} #patient dictionary
+        self.patients = {} #patient dict
 
-    def add_patient(self, patient): #patient = {'key':'value'}
+    def add_patient(self, patient):
+        ''' Append patient dict '''
         self.patients.update(patient)
 
-
 class Patient:
-    #class for a patient
+    '''
+    Patient class stored general patient information.
+    Dictionary of exams in format {'#': exam object}, where #=1 is the most recent exam
+    '''
     def __init__(
                 self,
-                mrn, 
+                mrn,
                 sid,
                 name,
                 fields
                 ):
-        #self.name #patient name
         self.mrn = mrn #Medical Record Number
         self.sid = sid #Study ID
-        self.exams = {} #dictonary storing exams
         self.name = name
         self.fields = fields #store the fields present in the BL, needed to determine what data will be imported (it needs to be present)
 
-        #set after obj initialization, set in BLImporter.py
-        self.bestresponse = 0 #best response
+        self.exams = {}
+        self.bestresponse = 0
         self.baselinesum = 0
-        self.course = '-' #course number (blank until entered)
-        self.day = '-' #day course (blank until entered)
-        self.ignore = False #don't exclude patient unless selected in GUI
+        self.course = '-' #course (cycle)
+        self.day = '-' #day of the cycle
+        self.ignore = False #patient exclude flag
 
-    def add_exam(self, exam): #function to add an exam to a patient, exam = {'key':'value'}
-        self.exams.update(exam) #update the exams dictionary
+    def add_exam(self, exam):
+        self.exams.update(exam) #Add an exam to dict
 
     def add_bestresponse(self, bestresponse):
         self.bestresponse = bestresponse
@@ -50,50 +53,49 @@ class Patient:
         self.ignore = ignore
 
 class Exam:
-    ''' Exam class used to store data about the exam as well as the lesion objects within that exam '''
+    '''
+    Exam class used to store data about the exam as well as the lesion objects within that exam
+    '''
     def __init__(
                 self, 
-                enum, 
+                exam_num, 
                 study_instance_uid
                 ):
-        self.enum = enum #exam number
+        self.exam_num = exam_num #exam number
         self.study_instance_uid = study_instance_uid #study instance uid, stored for future querying/access in PACS online browser
 
-        #variables to be set after obj initialization
         self.lesions = [] #list storing lesions
         self.time = ''
         self.date = '' #exam date
         self.modality = '' #exam modality (CT, MRI, PET, PET-CT)
         self.baseline = False #is it a baseline exam (boolean)
         self.current = False #is it the current exam (most recent)
-        self.description = '' #CTCHABDPEL for example
-        
+        self.description = '' #indicates area of body in scan
         self.ignore = False
-        '''NOTE:
-        ignore status used to exclude exams from best response determination 
-        if they are not in the (user specified or default) baselie to current exam range
-        default: dont ignore any exams (assume most recent exam is current, oldest is baseline)
 
-        also used when printing all the RECIST sheets for a patient to exclude exams we don't include in the baseline->current range
-        '''
+        # NOTE:
+        # ignore status used to exclude exams from best response determination 
+        # if they are not in the (user specified or default) baselie to current exam range
+        # default: dont ignore any exams (assume most recent exam is current, oldest is baseline)
+        # also used when printing all the RECIST sheets for a patient to exclude exams we don't include in the baseline->current range
 
-        #set in RECISTComp.py
-        self.trecistsum = 0 #target lesion sum
-        self.ntrecistsum = 0 #nontarget lesion sum
+        #target and nontarget lesion sums
+        self.trecistsum = 0
+        self.ntrecistsum = 0
 
-        #percent changes, set in RECISTComp.py
-        self.ntfrombaseline = 0
-        self.tfrombaseline = 0
-        self.tfrombestresponse = 0
+        #percent changes
+        self.ntfrombaseline = '-'
+        self.tfrombaseline = '-'
+        self.tfrombestresponse = '-'
 
-        self.tresponse = ''
-        self.ntresponse = ''
-        self.overallresponse = ''
-        self.measuredby = '' #who were all people who measured on this exam
+        self.tresponse = '-'
+        self.ntresponse = '-'
+        self.overallresponse = '-'
+        self.measuredby = '-' #All people who measured on this exam
 
-        self.containsnewlesion = False #flag used to indicate if an exam has a new lesion (used when determining best response)
-        self.containsnoT_NT_NL = False #field used to indicate if an exam doesnt have T,NT,or NL (false means it has T,NT,or NL, true means it lacks these)
-        self.lymphsize = False #check if all lymph nodes are less than 1cm in size (used in response determinations)
+        self.containsnewlesion = False #Indicate if an exam has a new lesion (used when determining best response)
+        self.containsnoT_NT_NL = False #Indicate if an exam doesnt have T,NT,or NL (false means it has T,NT,or NL, true means it lacks these)
+        self.lymphsize = False #Indicate if all lymph nodes are less than 1cm in size (used in response determinations)
 
         self.daysfromB = 0
         self.weeksfromB = 0
@@ -101,7 +103,7 @@ class Exam:
     def add_description(self,description):
         self.description = description
 
-    def add_lesion(self, lesion): #lesion is a pointer to a lesion
+    def add_lesion(self, lesion):
         self.lesions.append(lesion)
 
     def add_time(self,time):
@@ -111,10 +113,10 @@ class Exam:
         self.date = date #format MM/DD/YYYY
 
     def add_modality(self, modality):
-        self.modality = modality #update modality
+        self.modality = modality
 
     def add_baseline(self, baseline):
-        self.baseline = baseline #update baseline exam status
+        self.baseline = baseline #update baseline exam status, True or False
 
     def add_current(self, current):
         self.current = current
@@ -148,21 +150,20 @@ class Exam:
 
 
 class Lesion:
-    #class module for the Lesion datatype
-    def __init__(self):
-        
-        #variables to be set after obj initialization
-        self.volume = 0 #cm^3 (unrounded)
-        self.humean = 0 #HU
-        self.newlesion = False #False unless set to True
+    '''
+    Lesion class.
+    Utilize dictionary to store the parameters based on what is present in patient bookmark list.
 
+    '''
+    def __init__(self):
+        self.newlesion = False #False unless set to True
         self.params = {} #dictionary of parameters, populated according to the column names present in the Bookmark List
 
     def add_newlesion(self, newlesion):
         self.newlesion = newlesion #set to True if new lesion found
 
     def set_target(self, target):
-        self.target = target #use when need to change the target status of a lesion (i.e for new lesions)
+        self.target = target #Change target status of a lesion (i.e for new lesions)
 
     def add_humean(self,humean):
         self.humean = humean

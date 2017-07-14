@@ -3,21 +3,17 @@
 import easygui
 import os
 import pandas as pd
-import numpy
 import BLDataClasses
 import re
-import sys
 import xlrd
 from pprint import pprint
-from RECISTComp import RECISTComp
-from string import punctuation
 
-def BLImport(df, root, dirName, baseNames):
+def bl_import(df, root, dirName, baseNames):
     '''
     Function to import patient data from a bookmark list and store in data classes (see BLImporterUIVersion.py)
     '''
     for file in baseNames:
-        MRN,SID = getMRNSID(file)
+        MRN,SID = get_mrn_sid(file)
         key = (MRN+r'/'+SID)
         xl = pd.ExcelFile(dirName + r'/'+file)
         dTemp = xl.parse()
@@ -32,7 +28,7 @@ def BLImport(df, root, dirName, baseNames):
         ptname = dTemp.get_value(1,'Patient Name') #get patient name before cleaning, always in same row 
         
         #NOTE: When this line is included, the days/weeks from baseline will be incorrectly determined for any exam which does not have T, NT, NL (program crashes)
-        #dTemp = dropData(dTemp) #drop unnecessary rows (ie not Target or Non-Target or new lesions)
+        #dTemp = drop_df_rows(dTemp) #drop unnecessary rows (ie not Target or Non-Target or new lesions)
         
         root.add_patient({key:BLDataClasses.Patient(MRN,SID,ptname,columnNames_Update)}) #add patient to the patients dict under the root
         columnNames_Update.remove("Study Description") #remove these headers for lesion data extraction
@@ -42,8 +38,8 @@ def BLImport(df, root, dirName, baseNames):
     pd.DataFrame(df)
     
 
-def dropData(df):
-    NLcheck = re.compile('\s?new lesion\s?|\snl\s?', re.IGNORECASE)
+def drop_df_rows(df):
+    NLcheck = re.compile('\s+new lesion\s+|\snl\s+', re.IGNORECASE)
     dropIndices = [] #list of indices to drop
     for index, row in df.iterrows():
         #iterate over rows, get indices of rows to drop, acces column with row['col header']
@@ -58,7 +54,7 @@ def dropData(df):
 
     return df
 
-def getMRNSID(file): 
+def get_mrn_sid(file): 
     '''
     Function used to pull a patient MRN and protocol (the SID, or Study ID) from the filename, passed as a string.
     Expected file format contains continguous 7 digit MRN (ie xxxxxxx) and 7 character study protocol (ie xx-x-xxxx) seperated by an underscore.
@@ -197,9 +193,9 @@ def extractLesionData(df,index,exam,columnNames):
     '''
 
     # Used to check for lesion type - if not Target, Non-Target, or New lesion, call it Unspecified
-    tsearch = re.compile('\s?target\s?|\st\s?', re.IGNORECASE)
-    ntsearch = re.compile('\s?non-target\s?|\snt\s?|\snon target\s?', re.IGNORECASE)
-    NLcheck = re.compile('\s?new lesion\s?|\snl\s?', re.IGNORECASE)
+    tsearch = re.compile('\s+target\s+|\s+t\s+', re.IGNORECASE)
+    ntsearch = re.compile('\s+non-target\s+|\s+nt\s+|\snon target\s+', re.IGNORECASE)
+    NLcheck = re.compile('\s+new lesion\s+|\s+nl\s+', re.IGNORECASE)
 
     targetStr = str(df.get_value(index, 'Target')).lower()
     lesionDesc = str(df.get_value(index, 'Description')).lower()

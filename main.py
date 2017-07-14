@@ -1,6 +1,6 @@
 #! python3
 
-#Revision 7/5/17
+#Revision 7/14/17
 from PyQt5.QtWidgets import QProgressBar, QDialog, QTableWidget, QFileDialog, QHBoxLayout, QVBoxLayout, QTextEdit, QAction, qApp, QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QDesktopWidget, QMainWindow
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5 import QtCore
@@ -19,10 +19,10 @@ import plotandgraph #file holds plot window design
 import uploader #database upload page
 
 #All other dependencies
-from BLImporterUIVersion import BLImport
-from RECISTComp import RECISTComp
+from BLImporterUIVersion import bl_import
+from RECISTComp import recist_computer
 import pandas as pd
-from RECISTGen import generate_RECIST_Sheets
+from RECISTGen import generate_recist_sheets
 from DataExport import exportToExcel, waterfallPlot, spiderPlot, exportPlotData, exportToLog
 import BLDataClasses
 import shelve
@@ -140,11 +140,9 @@ class ExamSelectWindow(QDialog, examselect.Ui_Form):
 
 class MainWindow(QMainWindow, design.Ui_mainWindow):
     def __init__(self):
-        # super use here because it allows us to
-        # access variables, methods etc in the design.py file
+        # super use here because it allows us to access variables, methods etc in the design.py file
         super(self.__class__, self).__init__()
-        self.setupUi(self)  # This is defined in design.py file automatically
-                            # It sets up layout and widgets that are defined     
+        self.setupUi(self)  # This is defined in design.py file automatically. It sets up layout and widgets that are defined     
 
         #### INITIALIZATION ####
         self.settings() #initialize user settings
@@ -280,12 +278,12 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             self.Calcs = True
             self.statusbar.showMessage('Performing RECIST calculations')
             for key, patient in self.StudyRoot.patients.items():
-                RECISTComp(patient) #perform RECIST computations for the selected patient
-                # pprint(patient.exams)
-                # for key,exam in patient.exams.items():
-                #     pprint(vars(exam))
-                #     for lesion in exam.lesions:
-                #         pprint(vars(lesion))
+                recist_computer(patient) #perform RECIST computations for the selected patient
+                pprint(patient.exams)
+                for key,exam in patient.exams.items():
+                    pprint(vars(exam))
+                    for lesion in exam.lesions:
+                        pprint(vars(lesion))
             self.statusbar.showMessage('Done with RECIST calculations!', 1000)
         except Exception as e:
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
@@ -395,7 +393,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
 
         if flag == 0:
             #for self.file in self.baseNames:
-            BLImport(self.df,self.StudyRoot,self.dirName,self.baseNames) #send one patient at a time, adding them to the StudyRoot one at a time
+            bl_import(self.df,self.StudyRoot,self.dirName,self.baseNames) #send one patient at a time, adding them to the StudyRoot one at a time
             QMessageBox.information(self,'Message','Bookmark List(s) successfully imported.')
             self.statusbar.showMessage('Done importing Bookmark List(s)', 1000)
             
@@ -429,12 +427,12 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
 
     def genRECIST(self):
         self.statusbar.showMessage('Generating RECIST worksheets...')
-        generate_RECIST_Sheets(self.RECISTDir,self.OutDir,self.dirName,self.baseNames,self.StudyRoot,self.singleSheet.isChecked())
+        generate_recist_sheets(self.RECISTDir,self.OutDir,self.dirName,self.baseNames,self.StudyRoot,self.singleSheet.isChecked())
         # try:
         #     self.StudyRoot #check if patients imported
         #     try:
         #         if self.Calcs == True: #check if calcs performed
-        #             generate_RECIST_Sheets(self.RECISTDir,self.OutDir,self.dirName,self.baseNames,self.StudyRoot,self.singleSheet.isChecked())
+        #             generate_recist_sheets(self.RECISTDir,self.OutDir,self.dirName,self.baseNames,self.StudyRoot,self.singleSheet.isChecked())
         #             QMessageBox.information(self,'Message','RECIST worksheets generated.')
         #         elif self.Calcs == False:
         #             QMessageBox.information(self,'Message','Please perform RECIST calculations.')
