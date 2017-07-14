@@ -6,6 +6,7 @@ import pandas as pd
 import BLDataClasses
 import re
 import xlrd
+from jsonMapper import json_serialize
 from pprint import pprint
 
 def bl_import(df, root, dirName, baseNames):
@@ -18,6 +19,7 @@ def bl_import(df, root, dirName, baseNames):
         xl = pd.ExcelFile(dirName + r'/'+file)
         dTemp = xl.parse()
         pd.DataFrame(dTemp)
+        dTemp = dTemp.where((pd.notnull(dTemp)),None) #convert nan to None for JSON compliance
 
         #correct column headers
         dTemp = dTemp.rename(columns = {'Unnamed: 1':'Lesion Header'}) #name to the blank column which has the data about exam date, time, modality, description
@@ -34,6 +36,7 @@ def bl_import(df, root, dirName, baseNames):
         columnNames_Update.remove("Study Description") #remove these headers for lesion data extraction
         columnNames_Update.remove("Patient Name")
         extractData(dTemp,key,root,columnNames_Update)
+        json_serialize(root)
         df.append(dTemp) #append the BL to the overall list of BLs
     pd.DataFrame(df)
     
@@ -45,20 +48,17 @@ def drop_df_rows(df):
         #iterate over rows, get indices of rows to drop, acces column with row['col header']
         #drop if Unspecified, or NOT Target or Non-Target
         #New lesions not dropped as long as Description field has keywords 'new lesion #' or 'nl #' (spaces between words and number optional)
-
         if (pd.isnull(row['Study Description']) and (pd.isnull(row['Target']) | bool(row['Target'] == 'Unspecified')) \
             and not bool(NLcheck.search(str(row['Description']))) ):
                 dropIndices.append(index)
-
     df.drop(df.index[dropIndices], inplace = True)
-
     return df
 
 def get_mrn_sid(file): 
     '''
     Function used to pull a patient MRN and protocol (the SID, or Study ID) from the filename, passed as a string.
     Expected file format contains continguous 7 digit MRN (ie xxxxxxx) and 7 character study protocol (ie xx-x-xxxx) seperated by an underscore.
-    For example: MRNxxxxxxx_xx-x-xxxx is the recommended format.
+    For example: MRN#######_##-X-#### is the recommended format.
     '''
     regMRN = re.compile(r'\d{7}')
     regSID = re.compile(r'\w{2}-\w-\w{4}')
@@ -72,13 +72,7 @@ def extractData(df,ID,root,columnNames):
     Data is first stored into pandas dataframe and then into custom datastructures in BLImporterUIVersion.py 
     NOTE: 'ID' is string MRN+r'/'+SID used to find the patient in the patient dictionary, and 'root' is the StudyRoot 
     '''
-
-    #need to iterate through the rows of the dataframe, extracting data as we proceed.
-        #create a new exam at every instance of "STUDY INSTANCE UID" in Col 'Study Description' (added while parsing)
-            #for subsequent rows until next instance of study header, create lesions, link them to the exam
-
-    link = root.patients[ID] #go to patient
-
+    link = root.patients[ID] #selected patient
     examCount = 0
     lesionCount = 0
     date_modality_Flag = False #set to True when new exam found, so need to find date + modality
@@ -112,12 +106,8 @@ def extractData(df,ID,root,columnNames):
                 else:
                     time = tCheck.group()
                 
-                examDescription = extractDescription(date,time,modality,lesionHeader)
-
-                link.exams[examCount].add_date(date)
-                link.exams[examCount].add_time(time)
-                link.exams[examCount].add_modality(modality)
-                link.exams[examCount].add_description(examDescription)
+                description = extractDescription(date,time,modality,lesionHeader)
+                link.exams[examCount].add_date_time_modality_description(date,time,modality,description)
 
                 if beforeBaselineReg.search(lesionHeader) is not None:
                     #exam is before baseline, set it
@@ -203,35 +193,36 @@ def extractLesionData(df,index,exam,columnNames):
     lesion = BLDataClasses.Lesion()
     params = {}
     for header in columnNames:
+        #pull lesion data from present columns
         if header == 'Series' or header == 'Slice#':
             params[header] = int(df.get_value(index, header))
         else:
             params[header] = df.get_value(index, header)
     
-    if targetStr == 'target' or bool(tsearch.search(str(df.get_value(index, 'Description')))):
-        lesionType = 'Target'
-    elif targetStr == 'non-target'or bool(ntsearch.search(str(df.get_value(index, 'Description')))):
-        lesionType = 'Non-Target'
-    elif bool(NLcheck.search(str(df.get_value(index, 'Description')))):
-        lesionType = 'New Lesion'
+    if targetStr == 'target' or bool(tsearch.search(lesionDesc)):
+        params['Target'] = 'Target'
+    elif targetStr == 'non-target'or bool(ntsearch.search(lesionDesc)):
+        params['Target'] = 'Non-Target'
+    elif bool(NLcheck.search(lesionDesc)):
+        params['Target'] = 'New Lesion'
         lesion.add_newlesion(True)
         lesion.set_target('New lesion')
         exam.add_containsnewlesion(True) # exam contains a new lesion, exclude from best response determination
     else:
-        lesionType = 'Unspecified'
-
-    params['Target'] = lesionType # store parameters
-  
+        params['Target'] = 'Unspecified'
+ 
     lesion.add_params(params)
-
     return lesion
 
 def extractDescription(date,time,modality,lesionHeader):
     ''' 
-    Strip extraneous data from the 'lesion header' in order to extract the study description
-    typical format is: MM/DD/YYYY HH:MM AM/PM, DESCRIPTION, MODALITY, (body part) (# days from baseline)
-    NOTE: the description might empty!
+    Extraction the study description which includes the areas of the body scanned.
     '''
+
+    # Strip extraneous data from the 'lesion header' in order to extract the study description
+    # typical format is: MM/DD/YYYY HH:MM AM/PM, DESCRIPTION, MODALITY, (body part) (# days from baseline)
+    # NOTE: the description might empty!
+    
     str1  = lesionHeader.replace(date,'').replace(lesionHeader.split(', ')[-1],'').replace(modality,'')
     if time is not '':
         str1 = str1.replace(time,'') #check because time might be None -> time = '', so we need to check seperately.

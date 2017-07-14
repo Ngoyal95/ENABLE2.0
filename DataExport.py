@@ -15,8 +15,8 @@ def exportToExcel(StudyRoot,OutDir):
     '''
     colHeaders = ['Exam','Date','Modality','Follow-Up','Name','Tool',\
     'Description','Target','Sub-Type','Series','Slice#','RECIST Diameter (cm)', \
-    'Long Diameter (cm)','Short Diameter (cm)','Volume (cm³)','HU Mean (HU)','Creator', \
-    'Target RECIST Sum (cm)', 'Best Response Sum (cm)', 'Non-Target RECIST Sum (cm)',\
+    'Long Diameter (mm)','Short Diameter (mm)','Volume (mm³)','HU Mean (HU)','Creator', \
+    'Target RECIST Sum (mm)', 'Best Response Sum (mm)', 'Non-Target RECIST Sum (mm)',\
     'Target RECIST Sum percent change from baseline','Target RECIST Sum percent change from best response',\
     'Non-Target RECIST Sum percent change from baseline','Target Response',\
     'Non-Target Response','Overall Response']
@@ -31,9 +31,11 @@ def exportToExcel(StudyRoot,OutDir):
         wsP = ptWb.active
         compRow = mapPtDataExcel(wsP,wsC,compRow,patient,colHeaders)
         compRow+=3 #3 row gap btwn patients
-
-        ptWb.save(OutDir+'/'+patient.name+'.xlsx')
-
+        try:
+            ptWb.save(OutDir+'/'+patient.name+'.xlsx') #save individual sheet
+        except Exception as e:
+            QMessageBox.warning(None,'Error!','Could not save Compiled Data spreadsheet because the file is already open. Please close file and repeat spreadsheet export')
+            print("Error: ",e)     
     try:
         compileWb.save(OutDir+'/'+'CompiledData.xlsx')
     except PermissionError:

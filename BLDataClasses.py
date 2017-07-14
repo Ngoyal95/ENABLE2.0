@@ -100,20 +100,14 @@ class Exam:
         self.daysfromB = 0
         self.weeksfromB = 0
 
-    def add_description(self,description):
+    def add_date_time_modality_description(self, date, time, modality, description):
+        self.date = date #format MM/DD/YYYY
+        self.time = time #format HH:MM AM/PM
+        self.modality = modality
         self.description = description
 
     def add_lesion(self, lesion):
         self.lesions.append(lesion)
-
-    def add_time(self,time):
-        self.time = time #format HH:MM AM/PM
-
-    def add_date(self, date):
-        self.date = date #format MM/DD/YYYY
-
-    def add_modality(self, modality):
-        self.modality = modality
 
     def add_baseline(self, baseline):
         self.baseline = baseline #update baseline exam status, True or False

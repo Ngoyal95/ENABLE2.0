@@ -105,7 +105,7 @@ def find_best_response_sum(pt):
 
     #bubble sort
     for i in range(numExams,0,-1): #need to set ending val at 0 bc range is numExams --> 1 (so if BL contains only one exam it is not skipped)
-        if pt.exams[i].ignore == False: #skip exams prior to baseline, after current, or have new lesion
+        if pt.exams[i].ignore == False or pt.exams[i].baseline == True: #skip exams prior to baseline, after current, or have new lesion
             if flag == 0:
                 bestResp = pt.exams[i].trecistsum
                 newSum = bestResp
