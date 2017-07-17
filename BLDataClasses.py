@@ -89,7 +89,7 @@ class Exam:
         self.tfrombestresponse = '-'
 
         self.tresponse = '-'
-        self.ntresponse = '-'
+        self.ntrespons  e = '-'
         self.overallresponse = '-'
         self.measuredby = '-' #All people who measured on this exam
 

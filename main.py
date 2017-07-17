@@ -150,6 +150,11 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.setWindowIcon(QtGui.QIcon('../icons/enable_icon.png'))
         self.consultDate.setDate(QtCore.QDate.currentDate())
         
+        #### EXIT PROGRAM ####
+        # exitAction = QAction('EXIT',self)
+        # exitAction.setShortcut('Ctrl+Q')
+        # exitAction.triggered.connect(self.closeEvent)
+
         #### BUTTON FUNCTIONS ####
         self.importPatients.clicked.connect(self.importBookmarks)
         self.removePatients.clicked.connect(self.clearBookmarks)
@@ -392,8 +397,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             flag = 1 #no imports
 
         if flag == 0:
-            #for self.file in self.baseNames:
-            bl_import(self.df,self.StudyRoot,self.dirName,self.baseNames) #send one patient at a time, adding them to the StudyRoot one at a time
+            bl_import(self.df,self.StudyRoot,self.dirName,self.baseNames) #import patients
             QMessageBox.information(self,'Message','Bookmark List(s) successfully imported.')
             self.statusbar.showMessage('Done importing Bookmark List(s)', 1000)
             
@@ -464,11 +468,12 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         
     #### UI FUNCTIONS ####
     def closeEvent(self,event):
-        reply = QMessageBox.question(self,'Exit ENABLE 2.0',"Are you sure to quit ENABLE 2?", QMessageBox.Yes, QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            event.accept()
-        else:
-            event.ignore()
+        # reply = QMessageBox.question(self,'Exit ENABLE 2.0',"Are you sure to quit ENABLE 2?", QMessageBox.Yes | QMessageBox.No)
+        # if reply == QMessageBox.Yes:
+        #     event.accept()
+        # else:
+        #     event.ignore()
+        pass
 
     def center(self):
         qr = self.frameGeometry()

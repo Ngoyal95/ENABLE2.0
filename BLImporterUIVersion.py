@@ -6,7 +6,7 @@ import pandas as pd
 import BLDataClasses
 import re
 import xlrd
-from jsonMapper import json_serialize
+from jsonMapper import json_serialize, dumper
 from pprint import pprint
 
 def bl_import(df, root, dirName, baseNames):
@@ -17,7 +17,12 @@ def bl_import(df, root, dirName, baseNames):
         MRN,SID = get_mrn_sid(file)
         key = (MRN+r'/'+SID)
         xl = pd.ExcelFile(dirName + r'/'+file)
-        dTemp = xl.parse()
+        dTemp = xl.parse() # parse_dates=True so that date values are not type 'Timestamp'
+
+        if dTemp['Study Date'] is not None:
+            #dTemp['Study Date'] = pd.to_datetime(dTemp['Study Date'],format= "%H:%M:%S %Y-%d-%m") #nconvert Timestamp datatype --> datetime datatype compatible with Python
+            dTemp = dTemp.drop('Study Date',1)
+
         pd.DataFrame(dTemp)
         dTemp = dTemp.where((pd.notnull(dTemp)),None) #convert nan to None for JSON compliance
 
@@ -36,7 +41,8 @@ def bl_import(df, root, dirName, baseNames):
         columnNames_Update.remove("Study Description") #remove these headers for lesion data extraction
         columnNames_Update.remove("Patient Name")
         extractData(dTemp,key,root,columnNames_Update)
-        json_serialize(root)
+        #json_serialize(root)
+        dumper(root)
         df.append(dTemp) #append the BL to the overall list of BLs
     pd.DataFrame(df)
     
@@ -88,7 +94,7 @@ def extractData(df,ID,root,columnNames):
         if "STUDY INSTANCE" in SIUID: #locate a new exam
             examCount += 1
             date_modality_Flag = True
-            link.add_exam({examCount:BLDataClasses.Exam(index,SIUID.split("STUDY INSTANCE UID: ",1)[1].strip())}) #add an exam to patient's exam list, store the 'index', and SIUID
+            link.add_exam({examCount:BLDataClasses.Exam(examCount,SIUID.split("STUDY INSTANCE UID: ",1)[1].strip())}) #add an exam to patient's exam list, store the 'index', and SIUID
             lesionCount = 0
 
         elif ~pd.isnull(lesionHeader): #found a lesion, add to current exam
