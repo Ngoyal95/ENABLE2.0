@@ -7,8 +7,8 @@ from pymongo.errors import ConnectionFailure
 
 def testFnx(serialized):
     '''
-    Test function to submit serialied lesion data to the database.
-    Serialized is a list of serialized lesion data, ex: [serialized1, serialized2,...]
+    Test function to submit serialied patient data to the database.
+    Argument is expected to be a single dict corresponding to a patient.
     '''
 
     client = MongoClient() # connect to localhost on port 27017
@@ -21,7 +21,6 @@ def testFnx(serialized):
 
     db = client.test # access the 'test' db
     result = db.patients.insert_one(serialized)
-    print(result)
     # for i in serialized:
     #     result = db.patients.insert_one(i)
     #     print(result) #view result of insertion

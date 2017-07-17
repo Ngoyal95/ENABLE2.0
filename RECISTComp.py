@@ -14,9 +14,11 @@ def recist_computer(patient):
             #if lesion.params['Tool'].lower() == 'two diameters' or lesion.params['Tool'].lower() == 'line': #ignore any other type of segmentation
                 #Only Target and Non-Target lesions considered for summation
             if lesion.params['Target'].lower() == 'target':
-                tsum += round(round(lesion.params['RECIST Diameter (mm)'],2)/10, 1)
+                if lesion.params['RECIST Diameter (mm)'] is not None:
+                    tsum += round(round(lesion.params['RECIST Diameter (mm)'],2)/10, 1)
             elif lesion.params['Target'].lower() == 'non-target':
-                ntsum += round(round(lesion.params['RECIST Diameter (mm)'],2)/10, 1)
+                if lesion.params['RECIST Diameter (mm)'] is not None:
+                    ntsum += round(round(lesion.params['RECIST Diameter (mm)'],2)/10, 1)
         exam.add_RECISTsums(tsum, ntsum)
         tsum = 0
         ntsum = 0
@@ -105,7 +107,7 @@ def find_best_response_sum(pt):
 
     #bubble sort
     for i in range(numExams,0,-1): #need to set ending val at 0 bc range is numExams --> 1 (so if BL contains only one exam it is not skipped)
-        if pt.exams[i].ignore == False or pt.exams[i].baseline == True: #skip exams prior to baseline, after current, or have new lesion
+        if pt.exams[i].ignore == False and pt.exams[i].containsnewlesion == False: #skip exams prior to baseline, after current, or have new lesion
             if flag == 0:
                 bestResp = pt.exams[i].trecistsum
                 newSum = bestResp

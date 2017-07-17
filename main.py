@@ -24,6 +24,7 @@ from RECISTComp import recist_computer
 import pandas as pd
 from RECISTGen import generate_recist_sheets
 from DataExport import exportToExcel, waterfallPlot, spiderPlot, exportPlotData, exportToLog
+from backend_interface import json_serialize
 import BLDataClasses
 import shelve
 import sys # We need sys so that we can pass argv to QApplication
@@ -214,7 +215,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         
             if flag == 0:
                 #for self.file in self.baseNames:
-                BLImport(self.df,self.StudyRoot,self.dirName,self.appendList) #send one patient at a time, adding them to the StudyRoot one at a time
+                bl_import(self.df,self.StudyRoot,self.dirName,self.appendList) #send one patient at a time, adding them to the StudyRoot one at a time
                 QMessageBox.information(self,'Message','Bookmark List(s) successfully appended.')
                 self.statusbar.showMessage('Done importing Bookmark List(s)', 1000)
                 
@@ -283,12 +284,15 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             self.Calcs = True
             self.statusbar.showMessage('Performing RECIST calculations')
             for key, patient in self.StudyRoot.patients.items():
-                recist_computer(patient) #perform RECIST computations for the selected patient
-                pprint(patient.exams)
-                for key,exam in patient.exams.items():
-                    pprint(vars(exam))
-                    for lesion in exam.lesions:
-                        pprint(vars(lesion))
+                recist_computer(patient) #perform RECIST computations for the selected patient  
+
+                # pprint(patient.exams)
+                # for key,exam in patient.exams.items():
+                #     pprint(vars(exam))
+                #     for lesion in exam.lesions:
+                #         pprint(vars(lesion))
+
+            json_serialize(self.StudyRoot)
             self.statusbar.showMessage('Done with RECIST calculations!', 1000)
         except Exception as e:
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')

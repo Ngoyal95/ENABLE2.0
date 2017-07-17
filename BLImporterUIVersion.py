@@ -6,7 +6,6 @@ import pandas as pd
 import BLDataClasses
 import re
 import xlrd
-from jsonMapper import json_serialize, dumper
 from pprint import pprint
 
 def bl_import(df, root, dirName, baseNames):
@@ -19,7 +18,7 @@ def bl_import(df, root, dirName, baseNames):
         xl = pd.ExcelFile(dirName + r'/'+file)
         dTemp = xl.parse() # parse_dates=True so that date values are not type 'Timestamp'
 
-        if dTemp['Study Date'] is not None:
+        if 'Study Date' in list(dTemp):
             #dTemp['Study Date'] = pd.to_datetime(dTemp['Study Date'],format= "%H:%M:%S %Y-%d-%m") #nconvert Timestamp datatype --> datetime datatype compatible with Python
             dTemp = dTemp.drop('Study Date',1)
 
@@ -41,8 +40,6 @@ def bl_import(df, root, dirName, baseNames):
         columnNames_Update.remove("Study Description") #remove these headers for lesion data extraction
         columnNames_Update.remove("Patient Name")
         extractData(dTemp,key,root,columnNames_Update)
-        #json_serialize(root)
-        dumper(root)
         df.append(dTemp) #append the BL to the overall list of BLs
     pd.DataFrame(df)
     
