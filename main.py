@@ -1,13 +1,12 @@
 #! python3
 
-#Revision 7/14/17
+#Revision 7/18/17
 from PyQt5.QtWidgets import QProgressBar, QDialog, QTableWidget, QFileDialog, QHBoxLayout, QVBoxLayout, QTextEdit, QAction, qApp, QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QDesktopWidget, QMainWindow
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5 import QtCore
 
 #plotting dependencies
 import pyqtgraph as pg
-
 import pyqtgraph.exporters
 from pyqtgraph.Qt import QtCore, QtGui
 import numpy as np
@@ -17,6 +16,7 @@ import design # This file holds our MainWindow and all design related things
 import examselect #file holds exam selection window design
 import plotandgraph #file holds plot window design
 import uploader #database upload page
+import login #login page
 
 #All other dependencies
 from BLImporterUIVersion import bl_import
@@ -24,13 +24,14 @@ from RECISTComp import recist_computer
 import pandas as pd
 from RECISTGen import generate_recist_sheets
 from DataExport import exportToExcel, waterfallPlot, spiderPlot, exportPlotData, exportToLog
-from backend_interface import json_serialize
+from backend_interface import patient_uploader_func
 import BLDataClasses
 import shelve
 import sys # We need sys so that we can pass argv to QApplication
 import os
 import re
 import ctypes
+import traceback
 from pprint import pprint
 
 class ExamSelectWindow(QDialog, examselect.Ui_Form):
@@ -239,7 +240,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         
         self.ptname = self.StudyRoot.patients[self.selkey].name
         self.ptmrn = self.StudyRoot.patients[self.selkey].mrn
-        self.ptsid = self.StudyRoot.patients[self.selkey].sid
+        self.ptsid = self.StudyRoot.patients[self.selkey].study_protocol
 
         #Update display panel
         self.consultPatient.setText(self.ptname)
@@ -292,11 +293,12 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
                 #     for lesion in exam.lesions:
                 #         pprint(vars(lesion))
 
-            json_serialize(self.StudyRoot)
+            patient_uploader_func(self.StudyRoot)
             self.statusbar.showMessage('Done with RECIST calculations!', 1000)
         except Exception as e:
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
             print("Error: ",e)
+            traceback.print_exc()
             self.Calcs = False
 
     def removeSelectedPatient(self):
@@ -646,7 +648,19 @@ class DatabaseUploadDialog(QDialog, uploader.Ui_databaseuploaddialog):
     def __init__(self, parent=None):
         QMainWindow.__init__(self)
         self.setupUi(self) #setup the graphing window
+        
+class ENABLELoginWindow(QDialog, login.Ui_logindialog):
+    '''
+    Login page class
+    '''
+    def __init__(self, parent = None):
+        QDialog.__init__(self)
+        self.setupUi(self) #setup the graphing window
 
+        self.pixmax = QtGui.QPixmap('../icons/enable_icon.png')
+        self.ENABLE_logo.setPixmap(self.pixmax)
+        self.ENABLE_logo.show()
+        self.setWindowIcon(QtGui.QIcon('../icons/enable_icon.png'))
 
 if __name__ == '__main__':
     #set application icon

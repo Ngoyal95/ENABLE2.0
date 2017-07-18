@@ -90,8 +90,6 @@
         </item>
        </layout>
       </widget>
-      <zorder>verticalLayoutWidget_4</zorder>
-      <zorder>singleSheet</zorder>
      </widget>
      <widget class="QGroupBox" name="groupBox_4">
       <property name="geometry">

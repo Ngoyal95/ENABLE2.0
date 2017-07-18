@@ -20,14 +20,14 @@ class Patient:
     def __init__(
                 self,
                 mrn,
-                sid,
+                study_protocol,
                 name,
-                fields
+                bookmark_list_fields
                 ):
         self.mrn = mrn #Medical Record Number
-        self.sid = sid #Study ID
+        self.study_protocol = study_protocol #Study ID
         self.name = name
-        self.fields = fields #store the fields present in the BL, needed to determine what data will be imported (it needs to be present)
+        self.bookmark_list_fields = bookmark_list_fields #store the fields present in the BL, needed to determine what data will be imported (it needs to be present)
 
         self.exams = {}
         self.bestresponse = 0

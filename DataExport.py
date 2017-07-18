@@ -51,7 +51,7 @@ def mapPtDataExcel(wsP, wsC, compRow, patient, colHeaders):
         if exam.ignore == False:
             numRows += len(exam.lesions) #count rows only for included exams
 
-    ptData = ['Patient name:',patient.name,'MRN:',patient.mrn,'Protocol:',patient.sid]
+    ptData = ['Patient name:',patient.name,'MRN:',patient.mrn,'Protocol:',patient.study_protocol]
     #print patient ID info:
     for i in range(0,len(ptData)):
         wsP.cell(row = ptRow, column = i+1).value = ptData[i]
@@ -186,7 +186,7 @@ def exportPlotData(StudyRoot,OutDir):
             val = None
             QMessageBox.warning(None,'Error!','Could not compute percent change for patient: ' + patient.name + '\nError due to baseline sum = 0')
 
-        indivPtData = [patient.name,int(patient.mrn),patient.sid,val,patient.exams[1].overallresponse]
+        indivPtData = [patient.name,int(patient.mrn),patient.study_protocol,val,patient.exams[1].overallresponse]
         ptData.append(indivPtData)
 
     #now reorder patients in ptData list descending %change from baseline. Items with None as percent change go to bottom
@@ -251,7 +251,7 @@ def exportToLog(RECISTDir,OutDir,StudyRoot,vals):
     template = docx.Document(RECISTDir+r'/CIPS_Consult_Log.docx')
     
     table = template.tables[0] #meeting log table
-    table.cell(0,3).text = patient.sid
+    table.cell(0,3).text = patient.study_protocol
     table.cell(1,1).text = vals[2]
     table.cell(1,3).text = vals[3]
     table.cell(2,1).text = patient.name
