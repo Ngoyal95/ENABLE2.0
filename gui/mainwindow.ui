@@ -50,7 +50,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <attribute name="title">
-      <string>RECIST Tools</string>
+      <string>Consultation Panel</string>
      </attribute>
      <widget class="QGroupBox" name="groupBox_3">
       <property name="geometry">
@@ -91,157 +91,11 @@
        </layout>
       </widget>
      </widget>
-     <widget class="QGroupBox" name="groupBox_4">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>30</y>
-        <width>291</width>
-        <height>81</height>
-       </rect>
-      </property>
-      <property name="title">
-       <string>Mode</string>
-      </property>
-      <widget class="QWidget" name="horizontalLayoutWidget">
-       <property name="geometry">
-        <rect>
-         <x>20</x>
-         <y>20</y>
-         <width>251</width>
-         <height>51</height>
-        </rect>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout">
-        <item>
-         <widget class="QPushButton" name="exportMode">
-          <property name="text">
-           <string>Export</string>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-          <property name="autoExclusive">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="consultMode">
-          <property name="text">
-           <string>Consultation</string>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
-          </property>
-          <property name="autoExclusive">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="dataEntryMode">
-          <property name="text">
-           <string>Data Entry</string>
-          </property>
-          <property name="checkable">
-           <bool>true</bool>
-          </property>
-          <property name="autoExclusive">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </widget>
-     <widget class="QGroupBox" name="groupBox_5">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>240</y>
-        <width>291</width>
-        <height>61</height>
-       </rect>
-      </property>
-      <property name="title">
-       <string>Analysis Tools</string>
-      </property>
-      <widget class="QPushButton" name="plotsAndGraphs">
-       <property name="geometry">
-        <rect>
-         <x>32</x>
-         <y>20</y>
-         <width>231</width>
-         <height>28</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Plots &amp;&amp; Graphing</string>
-       </property>
-      </widget>
-     </widget>
-     <widget class="QGroupBox" name="groupBox">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>310</y>
-        <width>291</width>
-        <height>161</height>
-       </rect>
-      </property>
-      <property name="title">
-       <string>Output Generation</string>
-      </property>
-      <widget class="QWidget" name="verticalLayoutWidget_2">
-       <property name="geometry">
-        <rect>
-         <x>30</x>
-         <y>20</y>
-         <width>236</width>
-         <height>127</height>
-        </rect>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
-        <item>
-         <widget class="QCheckBox" name="singleSheet">
-          <property name="text">
-           <string>RECIST Sheet for current exam only</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="generateRECIST">
-          <property name="text">
-           <string>Generate RECIST Worksheets</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="generateSpreadsheets">
-          <property name="text">
-           <string>Generate spreadsheets</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="exportPlotData">
-          <property name="text">
-           <string>Export Graph Data</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </widget>
      <widget class="QGroupBox" name="groupBox_2">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>480</y>
+        <x>30</x>
+        <y>440</y>
         <width>291</width>
         <height>71</height>
        </rect>
@@ -777,8 +631,87 @@ p, li { white-space: pre-wrap; }
     </widget>
     <widget class="QWidget" name="tab_4">
      <attribute name="title">
-      <string>Help</string>
+      <string>RECIST Tools</string>
      </attribute>
+     <widget class="QGroupBox" name="groupBox_5">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>70</y>
+        <width>291</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="title">
+       <string>Analysis Tools</string>
+      </property>
+      <widget class="QPushButton" name="plotsAndGraphs">
+       <property name="geometry">
+        <rect>
+         <x>32</x>
+         <y>20</y>
+         <width>231</width>
+         <height>28</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Plots &amp;&amp; Graphing</string>
+       </property>
+      </widget>
+     </widget>
+     <widget class="QGroupBox" name="groupBox">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>170</y>
+        <width>291</width>
+        <height>161</height>
+       </rect>
+      </property>
+      <property name="title">
+       <string>Output Generation</string>
+      </property>
+      <widget class="QWidget" name="verticalLayoutWidget_2">
+       <property name="geometry">
+        <rect>
+         <x>30</x>
+         <y>20</y>
+         <width>236</width>
+         <height>127</height>
+        </rect>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QCheckBox" name="singleSheet">
+          <property name="text">
+           <string>RECIST Sheet for current exam only</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="generateRECIST">
+          <property name="text">
+           <string>Generate RECIST Worksheets</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="generateSpreadsheets">
+          <property name="text">
+           <string>Generate spreadsheets</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="exportPlotData">
+          <property name="text">
+           <string>Export Graph Data</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
     </widget>
     <widget class="QWidget" name="tab_3">
      <attribute name="title">
@@ -1470,6 +1403,17 @@ p, li { white-space: pre-wrap; }
    </widget>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="mainToolbar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
  </widget>
  <resources/>
  <connections/>

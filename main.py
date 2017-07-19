@@ -17,6 +17,7 @@ import examselect #file holds exam selection window design
 import plotandgraph #file holds plot window design
 import uploader #database upload page
 import login #login page
+import config
 
 #All other dependencies
 from BLImporterUIVersion import bl_import
@@ -32,6 +33,7 @@ import os
 import re
 import ctypes
 import traceback
+import hashlib
 from pprint import pprint
 
 class ExamSelectWindow(QDialog, examselect.Ui_Form):
@@ -146,18 +148,23 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         super(self.__class__, self).__init__()
         self.setupUi(self)  # This is defined in design.py file automatically. It sets up layout and widgets that are defined     
 
-        #### INITIALIZATION ####
         self.settings() #initialize user settings
-        self.operatingMode(1) #default to Export mode, self.opMode stores operating mode state (1 == export, 0 == consult)
         self.setWindowIcon(QtGui.QIcon('../icons/enable_icon.png'))
         self.consultDate.setDate(QtCore.QDate.currentDate())
-        
-        #### EXIT PROGRAM ####
-        # exitAction = QAction('EXIT',self)
-        # exitAction.setShortcut('Ctrl+Q')
-        # exitAction.triggered.connect(self.closeEvent)
 
-        #### BUTTON FUNCTIONS ####
+        #### Toolbar and actions ####
+        configAction = QAction(QtGui.QIcon('../icons/configIcon.png'),'Configure',self)
+        configAction.triggered.connect(self.config)
+        self.mainToolbar.addAction(configAction)
+        
+        logoutAction = QAction('Log Out',self)
+        logoutAction.triggered.connect(self.logout)
+        self.mainToolbar.addAction(logoutAction)
+        self.mainToolbar.insertSeparator(logoutAction)
+        
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Q"), self, self.quickExit)
+
+        #### Buttons ####
         self.importPatients.clicked.connect(self.importBookmarks)
         self.removePatients.clicked.connect(self.clearBookmarks)
         
@@ -168,26 +175,19 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.includePatient.clicked.connect(self.includeSelectedPatient)  #include patient
         self.exportPlotData.clicked.connect(self.EPD)  #export waterfall/spider/swimmer plot data
         self.patientListAppend.clicked.connect(self.appendPatientList)
-        self.configureButton.clicked.connect(self.configProg)  #program config
-        self.configureButton.setIcon(QtGui.QIcon('../icons/configIcon.png'))
 
-        #### LAUNCH SECONDARY DIALOGS ####
+        #### Secondary dialogs ####
         self.modExamDates.clicked.connect(self.launchExamSelect)
         self.plotsAndGraphs.clicked.connect(self.launchPlotAndGraph)
 
-        #### Operating mode select ####
-        self.exportMode.clicked.connect(lambda: self.operatingMode(1))
-        self.consultMode.clicked.connect(lambda: self.operatingMode(0))
-
-        #### CONSULT PANEL ####
+        #### Consultaton panel ####
         self.patientList.clicked.connect(self.updateConsult)
         self.generateConsultLog.clicked.connect(self.genConsultLog)
 
-        #### DISPLAY RELATED ####
-        self.show()
-
         #### DATABASE EXPORTS ####
         self.databaseUploader.clicked.connect(self.launchDbUploadDialog) #open uploader dialog
+
+        self.show()
 
     #### MAIN FUNCTIONS ####
     def appendPatientList(self):
@@ -353,31 +353,16 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
                 self.BLDir = shelfFile['BLDir']
                 self.RECISTDir = shelfFile['RECISTDir']
                 self.OutDir = shelfFile['OutDir']
+                self.mongodb_address = shelfFile['mongodb_address']
                 shelfFile.close()
         except KeyError:
             QMessageBox.information(self,'Message','Please configure ENABLE 2')
-            self.configProg()
-            self.settings()
+            self.config()
 
-    def configProg(self):
-        shelfFile = shelve.open('LocalPreferences')
-        BLDirT = str(QFileDialog.getExistingDirectory(self, "Select Bookmark List Directory"))
-        if BLDirT != '':
-            shelfFile['BLDir'] = BLDirT
-            self.BLDir = BLDirT
-        else:
-            QMessageBox.information(self,'Message','Directory unchanged.')
-
-        shelfFile['RECISTDir'] = os.path.dirname(os.path.realpath('RECISTForm.docx'))
-        shelfFile['LMUploader']=os.path.dirname(os.path.realpath('RadiologyImportClient.jar'))
-
-        OutDirT = str(QFileDialog.getExistingDirectory(self, "Select Output Directory"))
-        if OutDirT != '':
-            shelfFile['OutDir'] = OutDirT
-            self.OutDir = OutDirT
-        else:
-            QMessageBox.information(self,'Message','Directory unchanged.')
-        shelfFile.close()
+    def config(self):
+        self.config_page = ConfigurationPage()
+        self.config_page.exec()
+        self.settings()
 
     def importBookmarks(self):
         self.statusbar.showMessage('Importing Bookmark List(s)...')
@@ -473,13 +458,17 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         exportToLog(self.RECISTDir,self.OutDir,self.StudyRoot,self.vals)
         
     #### UI FUNCTIONS ####
-    def closeEvent(self,event):
-        # reply = QMessageBox.question(self,'Exit ENABLE 2.0',"Are you sure to quit ENABLE 2?", QMessageBox.Yes | QMessageBox.No)
-        # if reply == QMessageBox.Yes:
-        #     event.accept()
-        # else:
-        #     event.ignore()
+    def logout(self):
         pass
+    def quickExit(self):
+        self.close()
+
+    # def closeEvent(self):
+    #     reply = QMessageBox.question(self,'Exit ENABLE 2.0',"Are you sure to quit ENABLE 2?", QMessageBox.Yes | QMessageBox.No)
+    #     if reply == QMessageBox.Yes:
+    #         self.close()
+    #     else:
+    #         pass
 
     def center(self):
         qr = self.frameGeometry()
@@ -511,15 +500,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         except Exception:
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
     
-    def operatingMode(self,mode):
-        #sets program to operate in Export or Consultation mode
-        if mode == 1:
-            self.statusbar.showMessage("Operating Mode: Export")
-            self.consultFrame.setEnabled(False)
-        elif mode == 0:
-            self.statusbar.showMessage("Operating Mode: Consultation")
-            self.consultFrame.setEnabled(True)
-        self.opMode = mode
+
 
     def launchDbUploadDialog(self):
         try:
@@ -662,11 +643,68 @@ class ENABLELoginWindow(QDialog, login.Ui_logindialog):
         self.ENABLE_logo.show()
         self.setWindowIcon(QtGui.QIcon('../icons/enable_icon.png'))
 
+class ConfigurationPage(QDialog, config.Ui_configuration):
+    def __init__(self, parent=None):
+        QMainWindow.__init__(self)
+        
+        self.setupUi(self) #setup the selection window
+        self.setWindowIcon(QtGui.QIcon('../icons/configIcon.png'))     
+
+        shelfFile = shelve.open('LocalPreferences')
+        shelfFile['RECISTDir'] = os.path.dirname(os.path.realpath('RECISTForm.docx'))
+        shelfFile['LMUploader'] = os.path.dirname(os.path.realpath('RadiologyImportClient.jar'))
+        self.bl_directory.setText(shelfFile['BLDir'])
+        self.output_directory.setText(shelfFile['OutDir'])
+        shelfFile.close()
+
+        self.btn_bl_directory.clicked.connect(self.bl_directory_select)
+        self.btn_output_directory.clicked.connect(self.output_directory_select)
+        self.btn_db_path.clicked.connect(self.set_db_address)
+
+        self.admin_pass.textChanged.connect(self.admin_pass_check)
+        
+        self.show()
+        
+    def bl_directory_select(self):
+        shelfFile = shelve.open('LocalPreferences')
+        BLDirT = str(QFileDialog.getExistingDirectory(self, "Select Bookmark List Directory"))
+        if BLDirT != '':
+            shelfFile['BLDir'] = BLDirT
+        else:
+            QMessageBox.information(self,'Message','Directory unchanged.')
+        shelfFile.close()
+
+    def output_directory_select(self):
+        OutDirT = str(QFileDialog.getExistingDirectory(self, "Select Output Directory"))
+        if OutDirT != '':
+            shelfFile['OutDir'] = OutDirT
+        else:
+            QMessageBox.information(self,'Message','Directory unchanged.')
+        shelfFile.close()
+
+    def admin_pass_check(self):
+        self.entered_pass = hashlib.md5(str(self.admin_pass.text()).encode('utf-8')).hexdigest()
+        
+        if self.entered_pass == '719b6d1c52edbb355a8e9f8c0ada6ad4':
+            self.db_path.setEnabled(True)
+            self.btn_db_path.setEnabled(True)       
+
+    def set_db_address(self):
+        shelfFile = shelve.open('LocalPreferences')
+        mongodb_address = self.db_path.text()
+        if mongodb_address != '':
+            shelfFile['mongodb_address'] = mongodb_address
+            self.admin_pass.clear()
+            self.db_path.setEnabled(False)
+            self.btn_db_path.setEnabled(False)  
+        shelfFile.close()
+
 if __name__ == '__main__':
     #set application icon
     myappid = u'ENABLE 2.0_V1' # arbitrary string
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
+    #pyqtgraph settings
     pg.setConfigOption('background', 'w')
     pg.setConfigOption('foreground', 'k')
 
