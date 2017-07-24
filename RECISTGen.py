@@ -8,13 +8,11 @@ import pathlib
 # import glob
 # import time
 
-def generate_recist_sheets(RECISTDir, OutDir, dirName, baseNames, StudyRoot,singleSheet):
+def generate_recist_sheets(RECISTDir, OutDir, StudyRoot,singleSheet):
     '''
     Generate the RECIST sheets for each patient in the study (if they have not been put in the excludedlist)
     '''
-    for file in baseNames:
-        MRN, SID = get_mrn_sid(file) #gets MRN and SID from the file name
-        patient = StudyRoot.patients[MRN+r'/'+SID]
+    for key,patient in StudyRoot.patients.items():
         if patient.ignore == False:
             if singleSheet == True:
                 numExams = len(patient.exams.keys())
@@ -22,12 +20,12 @@ def generate_recist_sheets(RECISTDir, OutDir, dirName, baseNames, StudyRoot,sing
                     #search for current exam
                     if patient.exams[l].current == True:
                         break
-                recist_sheet(RECISTDir, OutDir, patient, patient.exams[l], file) #generate sheet for exam marked as 'current'
+                recist_sheet(RECISTDir, OutDir, patient, patient.exams[l]) #generate sheet for exam marked as 'current'
             elif singleSheet == False:
                 #iterate through all exams within the baseline->current range and create RECIST worksheets
                 for key, exam in patient.exams.items():
                     if exam.ignore == False:
-                        recist_sheet(RECISTDir, OutDir, patient, exam, file)
+                        recist_sheet(RECISTDir, OutDir, patient, exam)
     
     #Conversion to PDF, throws an error, but does create PDFs
     # word = comtypes.client.CreateObject('Word.Application') #launch Word instance to convert files to PDFs
@@ -63,11 +61,12 @@ def convert_date(date):
     '''
     return str(date.replace(r'/','.',))
 
-def recist_sheet(RECISTDir, OutDir, patient, exam, file):
+def recist_sheet(RECISTDir, OutDir, patient, exam):
     '''
     Generate a single RECIST sheet for the patient and specified exam
     '''
-    MRN, SID = get_mrn_sid(file) #gets MRN and SID from the file name
+    MRN = patient.mrn
+    SID = patient.study_protocol
     
     #### GENERAL DATA ####
     template = docx.Document(RECISTDir + '\\RECISTForm.docx')

@@ -123,15 +123,12 @@ def extractData(df,ID,root,columnNames):
             if lesion.params['Target'].lower() != 'unspecified':
                 numLesion += 1
 
-        #NOTE: THIS STILL WORKS EVEN IF WE DROP THE ROWS WHICH ARE UNSPEC. LESIONS (OR BLANK 'Target' FIELD)
-        exam.lesions.sort(key=lambda x:x.params['Target'], reverse = False) #sort in order NewLesion,NonTarget,Target,Unspec
+        exam.lesions.sort(key=lambda x:x.params['Target'], reverse = False) #sort in order NewLesion,NonTarget,Target,Unspec for RECIST sheet printing
         ptA = exam.lesions[:numLesion] #slice to extract the Newlesion,nontarget,target lesions
         ptA.sort(key = lambda x:x.params['Target'], reverse = True) #reverse alphabetize the slice
         exam.lesions = ptA + exam.lesions[numLesion:] #append to the Unspec. lesions
-        #Now order of list of lesions  is T,NT,NL,Unspec. (needed for proper recist sheet printing)
 
-        #------Get all names of people who measured in the exam-----#
-        measurers = list(set([lesion.params['Creator'] for lesion in exam.lesions]))
+        measurers = list(set([lesion.params['Creator'] for lesion in exam.lesions])) #get names of all people who measured in an exam
         creators = ', '.join(map(str,measurers))
         exam.measuredby = creators
 
