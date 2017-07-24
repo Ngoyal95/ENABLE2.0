@@ -1,7 +1,7 @@
 #! python3
 
 #Revision 7/20/17
-from PyQt5.QtWidgets import QProgressBar, QDialog, QTableWidget, QFileDialog, QHBoxLayout, QVBoxLayout, QTextEdit, QAction, qApp, QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QDesktopWidget, QMainWindow
+from PyQt5.QtWidgets import QLineEdit, QProgressBar, QDialog, QTableWidget, QFileDialog, QHBoxLayout, QVBoxLayout, QTextEdit, QAction, qApp, QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QDesktopWidget, QMainWindow
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5 import QtCore
 
@@ -158,15 +158,9 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.StudyRoot = BLDataClasses.StudyRoot() #stores imported Bookmark List data
         self.FetchRoot = BLDataClasses.StudyRoot() #stores data pulled from ENABLE database
 
-
         #### Signal Connections ####
         self.recist_calc_signal.connect(self.recistCalculations)
         self.recist_sheets_signal.connect(self.genRECIST)
-
-        #### Add filter model to filter matching items ####
-        # self.pFilterModel = QtCore.QSortFilterProxyModel(self)
-        # self.pFilterModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        # self.pFilterModel.setSourceModel(self.model())
 
         #### Toolbar and actions ####
         configAction = QAction(QtGui.QIcon('../icons/configIcon.png'),'Configure',self)
@@ -178,19 +172,16 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.usr = self.conf['user']['usr']
         self.usrp = self.conf['user']['p']
         self.database_list = pull_patient_list_from_mongodb()
+        self.search_list = []
         for i in range(0,len(self.database_list[0])):
             self.list_available_patients.addItem(self.database_list[0][i] + ' - ' + self.database_list[1][i] + '/' + self.database_list[2][i])
-            self.list_patients_to_load.addItem(self.database_list[0][i] + ' - ' + self.database_list[1][i] + '/' + self.database_list[2][i])
+            self.search_list.append(self.database_list[0][i] + ' - ' + self.database_list[1][i] + '/' + self.database_list[2][i])
+
+        self.completer = QtGui.QCompleter(self.search_list,self)
+        self.completer.setCompletionMode(QtGui.QCompleter.PopupCompletion)
+        self.completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self.combobox_patient_search.setCompleter(self.completer)
         
-        # # # add a completer, which uses the filter model
-        # self.completer = QtGui.QCompleter(self.database_list[0], self)
-        # # always show all (filtered) completions
-        # self.completer.setCompletionMode(QtGui.QCompleter.UnfilteredPopupCompletion)
-        # self.setCompleter(self.completer)
-
-        self.combobox_patient_search.completer().setCompletionMode(QtGui.QCompleter.PopupCompletion)
-        self.combobox_patient_search.addItems(self.database_list[0])
-
         #### Consultation Tab Buttons ####
         self.importPatients.clicked.connect(self.importBookmarks)
         self.removePatients.clicked.connect(self.clearBookmarks)
@@ -204,17 +195,12 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.btn_consult_generate_recist.clicked.connect(self.recist_sheet_with_studyroot)
         self.btn_consult_recist_calcs.clicked.connect(self.recist_cal_with_studyroot)
 
-
         #### Clinical Tab Buttons ####
         self.generateSpreadsheets.clicked.connect(self.genSpreadsheets)  #generate spreadsheets (singles and cohort)
         self.exportPlotData.clicked.connect(self.EPD)  #export waterfall/spider/swimmer plot data
         self.btn_load_patients_from_db.clicked.connect(self.import_patients_from_db)
-
         self.btn_clinical_generate_recist.clicked.connect(self.recist_sheet_with_fetchrot)
         self.btn_clinical_recist_calcs.clicked.connect(self.recist_cal_with_fetchroot)
-
-        #self.completer.activated.connect(self.select_patient_for_load)
-        #self.combobox_patient_search.lineEdit.returnPressed(self.select_patient_for_load)
         
         #### Secondary Dialog Launch ####
         self.modExamDates.clicked.connect(self.launchExamSelect)
@@ -571,16 +557,16 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
                     self.uploaddialog.exec()
                 elif self.Calcs == False:
                     QMessageBox.information(self,'Message','Please perform RECIST calculations.')
-            except AttributeError:
+            except Exception as e:
+                print(e)
+                traceback.print_exc()
                 QMessageBox.information(self,'Message','Please perform RECIST calculations.')
-        except Exception:
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
 
-    #### CLINICAL TAB FUNCTIONS ####
-    def select_patient_for_load(self,text):
-        if text:
-            print(text)
-    
+    #### CLINICAL TAB FUNCTIONS ####   
     def import_patients_from_db(self):
         self.statusbar.showMessage('Importing from Database!', 1000)
         self.fetch_list = [i.text() for i in self.list_patients_to_load.findItems("", QtCore.Qt.MatchContains)]
@@ -592,6 +578,12 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.exportPlotData.setEnabled(True)
         self.plotsAndGraphs.setEnabled(True)
         self.btn_clinical_recist_calcs.setEnabled(True)
+
+    def patient_search_update(self,signal):
+        lst = [i.text() for i in self.list_available_patients.findItems(signal, QtCore.Qt.MatchContains)]
+        self.combobox_patient_search.addItems(lst)
+        self.combobox_patient_search.showPopup()
+        print(lst)
 
 class PlotAndGraphingDialog(QDialog, plotandgraph.Ui_plotAndGraphUtility):
     def __init__(self, parent=None):
