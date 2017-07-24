@@ -108,8 +108,7 @@ def pull_patients_from_mongodb(FetchRoot,fetch_list):
     client = MongoClient()
     db = client.test
     for pt in fetch_list:
-        fetched.append(db.patients.find_one({"name":pt}))
-
+        fetched.append(db.patients.find_one({"name":pt.split(' - ',1)[0]})) #Need to pass only names (ex. "Smith, John Bob")
     map_mongo_dict_to_ptobj(FetchRoot,fetched)
     client.close()
 

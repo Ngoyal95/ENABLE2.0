@@ -40,8 +40,8 @@ def bl_import(df, root, dirName, baseNames):
         columnNames_Update.remove("Study Description") #remove these headers for lesion data extraction
         columnNames_Update.remove("Patient Name")
         extractData(dTemp,key,root,columnNames_Update)
-        df.append(dTemp) #append the BL to the overall list of BLs
-    pd.DataFrame(df)
+        df[key] = dTemp #append the BL to the overall dict of BL tables
+    pd.DataFrame(df[key])
     
 
 def drop_df_rows(df):

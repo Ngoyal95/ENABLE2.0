@@ -1,7 +1,7 @@
 #! python3
 
 #Revision 7/20/17
-from PyQt5.QtWidgets import QLineEdit, QProgressBar, QDialog, QTableWidget, QFileDialog, QHBoxLayout, QVBoxLayout, QTextEdit, QAction, qApp, QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QDesktopWidget, QMainWindow
+from PyQt5.QtWidgets import QLineEdit, QProgressBar, QDialog, QTableWidget, QFileDialog, QAction, QApplication, QWidget, QPushButton, QMessageBox, QDesktopWidget, QMainWindow
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5 import QtCore
 
@@ -39,10 +39,34 @@ import hashlib
 import pymongo
 import time
 import yaml
-from random import randint
 from pprint import pprint
 
-class ExamSelectWindow(QDialog, examselect.Ui_Form):
+class PatientModel(QtCore.QAbstractTableModel):
+    """
+    Class to populate a table view with a pandas dataframe
+    """
+    def __init__(self, data, parent=None):
+        QtCore.QAbstractTableModel.__init__(self, parent)
+        self._data = data
+
+    def rowCount(self, parent=None):
+        return self._data.shape[0]
+
+    def columnCount(self, parent=None):
+        return self._data.shape[1]
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if index.isValid():
+            if role == QtCore.Qt.DisplayRole:
+                return str(self._data.iloc[index.row(), index.column()])
+        return None
+
+    def headerData(self, col, orientation, role):
+        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+            return self._data.columns[col]
+        return None
+
+class DataOverrides(QDialog, examselect.Ui_Form):
     def __init__(self, parent=None):
         QMainWindow.__init__(self)
         self.setupUi(self) #setup the selection window
@@ -55,10 +79,12 @@ class ExamSelectWindow(QDialog, examselect.Ui_Form):
         #### BUTTON FUNCTIONS ####
         self.returnToHome.clicked.connect(self.returnHome)
         self.patientList.itemClicked.connect(self.patientSelected)
+        self.patientList.itemClicked.connect(self.populate_table)
         self.setExams.clicked.connect(self.setPatientExams)
 
         #### Signal Connections ####
         self.currentExamSelect.currentIndexChanged.connect(self.updateOptions) #update the baseline exam dropdown menu
+        
 
     #### Functions ####
     def setPatientExams(self):
@@ -135,6 +161,21 @@ class ExamSelectWindow(QDialog, examselect.Ui_Form):
     def returnHome(self):
         self.close()
 
+    def populate_table(self):
+        currPt = self.patientList.currentItem().text() #current patient string
+        MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
+        self.selkey = MRNSID.search(currPt).group() #selected patient
+
+        # self.patient = form.StudyRoot.patients[self.selkey]
+        # self.display_table.setHorizontalHeaderLabels(self.patient.bookmark_list_fields)
+        # self.display_table.show()
+
+        self.model = PatientModel(form.df[self.selkey])
+        self.display_table.setModel(self.model)
+        #self.display_table.setGeometry(590,49,981,621)
+        #self.display_table.show()
+
+
 class MainWindow(QMainWindow, design.Ui_mainWindow):
     
     recist_calc_signal = QtCore.pyqtSignal(bool) #indicate if FetchRoot should be used (if False), or StudyRoot (if True)
@@ -151,10 +192,10 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.LoginWindow.closeSignal.connect(self.login_close)
         self.LoginWindow.exec_()
 
+        #### Init ####
         self.settings() #load user settings
         self.setWindowIcon(QtGui.QIcon('../icons/enable_icon.png'))
         self.consultDate.setDate(QtCore.QDate.currentDate())
-
         self.StudyRoot = BLDataClasses.StudyRoot() #stores imported Bookmark List data
         self.FetchRoot = BLDataClasses.StudyRoot() #stores data pulled from ENABLE database
 
@@ -162,27 +203,19 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.recist_calc_signal.connect(self.recistCalculations)
         self.recist_sheets_signal.connect(self.genRECIST)
 
-        #### Toolbar and actions ####
+        #### Toolbar and Secondary Dialog Launch ####
         configAction = QAction(QtGui.QIcon('../icons/configIcon.png'),'Configure',self)
         configAction.triggered.connect(self.config)
         self.mainToolbar.addAction(configAction)
+        self.modExamDates.clicked.connect(self.launchExamSelect)
+        self.plotsAndGraphs.clicked.connect(self.launchPlotAndGraph)
 
         #### Connect to DB ####
-        self.conf = yaml.load(open(os.path.realpath('usrp.yml')))
-        self.usr = self.conf['user']['usr']
-        self.usrp = self.conf['user']['p']
-        self.database_list = pull_patient_list_from_mongodb()
-        self.search_list = []
-        for i in range(0,len(self.database_list[0])):
-            self.list_available_patients.addItem(self.database_list[0][i] + ' - ' + self.database_list[1][i] + '/' + self.database_list[2][i])
-            self.search_list.append(self.database_list[0][i] + ' - ' + self.database_list[1][i] + '/' + self.database_list[2][i])
-
-        self.completer = QtGui.QCompleter(self.search_list,self)
-        self.completer.setCompletionMode(QtGui.QCompleter.PopupCompletion)
-        self.completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        self.combobox_patient_search.setCompleter(self.completer)
-        
-        #### Consultation Tab Buttons ####
+        # self.conf = yaml.load(open(os.path.realpath('usrp.yml')))
+        # self.usr = self.conf['user']['usr']
+        # self.usrp = self.conf['user']['p']
+            
+        #### Consultation Tab ####
         self.importPatients.clicked.connect(self.importBookmarks)
         self.removePatients.clicked.connect(self.clearBookmarks)
         self.excludePatient.clicked.connect(self.removeSelectedPatient)  #exclude selected patient
@@ -195,24 +228,28 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.btn_consult_generate_recist.clicked.connect(self.recist_sheet_with_studyroot)
         self.btn_consult_recist_calcs.clicked.connect(self.recist_cal_with_studyroot)
 
-        #### Clinical Tab Buttons ####
+        #### Clinical Tab ####
         self.generateSpreadsheets.clicked.connect(self.genSpreadsheets)  #generate spreadsheets (singles and cohort)
         self.exportPlotData.clicked.connect(self.EPD)  #export waterfall/spider/swimmer plot data
         self.btn_load_patients_from_db.clicked.connect(self.import_patients_from_db)
         self.btn_clinical_generate_recist.clicked.connect(self.recist_sheet_with_fetchrot)
         self.btn_clinical_recist_calcs.clicked.connect(self.recist_cal_with_fetchroot)
-        
-        #### Secondary Dialog Launch ####
-        self.modExamDates.clicked.connect(self.launchExamSelect)
-        self.plotsAndGraphs.clicked.connect(self.launchPlotAndGraph)
 
-    def launch_main_window(self,signal):
-        if signal == True:
-            QtCore.QTimer.singleShot(2000,self.start)
-            
-    def start(self):
-        self.show()
-        self.LoginWindow.hide()
+        self.database_list = pull_patient_list_from_mongodb()
+        self.search_list = []
+        for i in range(0,len(self.database_list[0])):
+            self.list_available_patients.addItem(self.database_list[0][i] + ' - ' + self.database_list[1][i] + '/' + self.database_list[2][i])
+            self.search_list.append(self.database_list[0][i] + ' - ' + self.database_list[1][i] + '/' + self.database_list[2][i])
+
+        self.search_lineedit = QLineEdit()
+        self.combobox_patient_search.setLineEdit(self.search_lineedit)
+        self.completer = QtGui.QCompleter(self.search_list,self)
+        self.completer.setCompletionMode(QtGui.QCompleter.PopupCompletion)
+        self.completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self.combobox_patient_search.setCompleter(self.completer)
+        self.btn_add_patient_to_load.clicked.connect(self.add_patient_selected)
+        self.btn_dont_load_selected_patient.clicked.connect(self.dont_load_selected_patient)
+        self.btn_unload_all_patients.clicked.connect(self.unload_all_patients)
 
     #### Signal Functions ####
     def recist_cal_with_fetchroot(self):
@@ -227,7 +264,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
     def recist_sheet_with_studyroot(self):
         self.recist_sheets_signal.emit(True)
 
-    #### MAIN FUNCTIONS ####
+    #### Consult Tab Functions ####
     def appendPatientList(self):
         self.appendList = [] #list specifically for appending
         try:
@@ -315,30 +352,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
         self.statusbar.showMessage('Done.', 1000)
 
-    def recistCalculations(self,signal):
-        #perform recist calculations by passing each patient in self.root_to_use to the recist_computer() function
-        
-        if signal == True:
-            self.root_to_use = self.StudyRoot
-            self.btn_consult_generate_recist.setEnabled(True)
-            self.databaseUploader.setEnabled(True)
-        else:
-            self.root_to_use = self.FetchRoot
 
-        try:
-            getattr(self,'StudyRoot')
-            self.Calcs = True
-            self.statusbar.showMessage('Performing RECIST calculations')
-            for key, patient in self.root_to_use.patients.items():
-                recist_computer(patient) #perform RECIST computations for the selected patient  
-            if signal == True:
-                patient_uploader_func(self.root_to_use,None,True)
-            self.statusbar.showMessage('Done with RECIST calculations!', 1000)
-        except Exception as e:
-            QMessageBox.information(self,'Message','Please import Bookmark List(s).')
-            print("Error: ",e)
-            traceback.print_exc()
-            self.Calcs = False
 
     def removeSelectedPatient(self):
         #remove highlighted patients, flag them in StudyRoot so they are skipped (ignore == True)
@@ -404,45 +418,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.config_page.exec()
         self.settings()
 
-    def importBookmarks(self):
-        self.statusbar.showMessage('Importing Bookmark List(s)...')
-        self.patientList.clear()
-        self.df = []
-        self.baseNames = [] #initialize list of base names
-        
-        flag = 0
-        try: #catch error when user hits "ESC" in file select dialogue
-            ret = QFileDialog.getOpenFileNames(self, "Select Bookmark List(s)", self.BLDir) #returns tuple (list of file names, filter)
-            files = ret[0] #absolute file paths to bookmark lists selected
-            
-            self.dirName = os.path.dirname(files[0]) #all BL in same directory, take dir from first
-            #self.baseNames = [] #initialize list of base names
-            for i in files:
-                self.baseNames.append(os.path.basename(i)) #add the base names to a list
-            flag = 0
-            
-        except Exception:
-            self.dirName = ''
-            self.baseNames = ''
-            flag = 1 #no imports
-
-        if flag == 0:
-            bl_import(self.df,self.StudyRoot,self.dirName,self.baseNames) #import patients
-            for key,patient in self.StudyRoot.patients.items():
-                pprint(vars(patient))
-            QMessageBox.information(self,'Message','Bookmark List(s) successfully imported.')
-            self.statusbar.showMessage('Done importing Bookmark List(s)', 1000)
-            
-            ### Populate List with Pt names ###
-            for key,patient in self.StudyRoot.patients.items():
-                self.patientList.addItem(patient.name + ' - ' + key)
-        elif flag == 1:
-            QMessageBox.information(self,'Message','No Bookmark List(s) imported.')
-            del self.StudyRoot
-            self.statusbar.clearMessage()
-
-        self.modExamDates.setEnabled(True)
-        self.btn_consult_recist_calcs.setEnabled(True)
+    
 
     def genSpreadsheets(self):   
         #call the function to create spreadsheets
@@ -464,29 +440,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             print("Error: ",e)
         self.statusbar.showMessage('Done generating spreadsheets.', 1000)
 
-    def genRECIST(self,signal):
-        if signal == True:
-            self.root_to_use = self.StudyRoot
-        else:
-            self.root_to_use = self.FetchRoot
-        try:
-            self.root_to_use #check if patients imported
-            try:
-                #if self.Calcs == True: #check if calcs performed
-                generate_recist_sheets(self.RECISTDir, self.OutDir, self.root_to_use, self.singleSheet.isChecked())
-                #QMessageBox.information(self,'Message','RECIST worksheets generated.')
-                #elif self.Calcs == False:
-                #QMessageBox.information(self,'Message','Please perform RECIST calculations.')
-            except Exception as e:
-                QMessageBox.information(self,'Message','Please perform RECIST calculations.')
-                traceback.print_exc()
-                print('Error: ',e)
-
-        except Exception as e:
-            QMessageBox.information(self,'Message','Please import Bookmark List(s).')
-            traceback.print_exc()
-            print('Error: ',e)
-        self.statusbar.showMessage('Done generating RECIST worksheets.', 1000)
+   
 
     def genConsultLog(self):
         self.vals = [
@@ -505,17 +459,18 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
                     ]
         exportToLog(self.RECISTDir,self.OutDir,self.StudyRoot,self.vals)
         
-    #### UI FUNCTIONS ####
+    #### UI Functions ####
     def login_close(self,signal):
         if signal == True:
             sys.exit()
+    def launch_main_window(self,signal):
+        if signal == True:
+            QtCore.QTimer.singleShot(2000,self.start)
+            
+    def start(self):
+        self.show()
+        self.LoginWindow.hide()
 
-    # def closeEvent(self):
-    #     reply = QMessageBox.question(self,'Exit ENABLE 2.0',"Are you sure to quit ENABLE 2?", QMessageBox.Yes | QMessageBox.No)
-    #     if reply == QMessageBox.Yes:
-    #         self.close()
-    #     else:
-    #         pass
     def center(self):
         qr = self.frameGeometry()
         cp = QDesktopWidget().availableGeometry().center()
@@ -526,8 +481,8 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         #launch exam selection dialog if the StudyRoot exists (BLs have been imported)
         try:
             getattr(self,'StudyRoot')
-            self.examSelect = ExamSelectWindow()
-            self.examSelect.exec()
+            self.dataoverride = DataOverrides()
+            self.dataoverride.exec()
         except AttributeError:
             QMessageBox.information(self,'Message','Please Import Bookmark List(s).')
 
@@ -566,25 +521,141 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             traceback.print_exc()
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
 
-    #### CLINICAL TAB FUNCTIONS ####   
+    #### Clinical Tab Functions ####   
     def import_patients_from_db(self):
+        # if self.FetchRoot is None:
+        #     self.FetchRoot = BLDataClasses.StudyRoot()
+        
+        try:
+            self.FetchRoot
+        except Exception as e:
+            print(e)
+            self.FetchRoot = BLDataClasses.StudyRoot()
+
         self.statusbar.showMessage('Importing from Database!', 1000)
         self.fetch_list = [i.text() for i in self.list_patients_to_load.findItems("", QtCore.Qt.MatchContains)]
         pull_patients_from_mongodb(self.FetchRoot,self.fetch_list)
         self.statusbar.showMessage('Done importing!',1000)
+
+        self.list_patients_to_load.clear()
+        self.list_loaded_patients.addItems(self.fetch_list)
 
         self.btn_clinical_generate_recist.setEnabled(True)
         self.generateSpreadsheets.setEnabled(True)
         self.exportPlotData.setEnabled(True)
         self.plotsAndGraphs.setEnabled(True)
         self.btn_clinical_recist_calcs.setEnabled(True)
+        self.btn_unload_all_patients.setEnabled(True)
 
-    def patient_search_update(self,signal):
-        lst = [i.text() for i in self.list_available_patients.findItems(signal, QtCore.Qt.MatchContains)]
-        self.combobox_patient_search.addItems(lst)
-        self.combobox_patient_search.showPopup()
-        print(lst)
+    def add_patient_selected(self):
+        if not self.list_patients_to_load.findItems(str(self.combobox_patient_search.currentText()), QtCore.Qt.MatchFixedString):
+            self.list_patients_to_load.addItem(str(self.combobox_patient_search.currentText()))
+        self.search_lineedit.clear()
 
+    def unload_all_patients(self):
+        try:
+            self.list_loaded_patients.clear()
+            del self.FetchRoot
+        except Exception as e:
+            print(e)
+
+    def dont_load_selected_patient(self):
+        try:
+            temp = self.list_patients_to_load.currentItem()
+            self.list_patients_to_load.takeItem(self.list_patients_to_load.row(temp))
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+            QMessageBox.information(self,'Message','No patient selected for removal.')
+
+    #### Shared Computational/Operation Functions ####
+    def recistCalculations(self,signal):
+        #perform recist calculations by passing each patient in self.root_to_use to the recist_computer() function
+        if signal == True:
+            self.root_to_use = self.StudyRoot
+            self.btn_consult_generate_recist.setEnabled(True)
+            self.databaseUploader.setEnabled(True)
+        else:
+            self.root_to_use = self.FetchRoot
+
+        try:
+            getattr(self,'StudyRoot')
+            self.Calcs = True
+            self.statusbar.showMessage('Performing RECIST calculations')
+            for key, patient in self.root_to_use.patients.items():
+                recist_computer(patient) #perform RECIST computations for the selected patient  
+            if signal == True:
+                patient_uploader_func(self.root_to_use,None,True)
+            self.statusbar.showMessage('Done with RECIST calculations!', 1000)
+        except Exception as e:
+            QMessageBox.information(self,'Message','Please import Bookmark List(s).')
+            print("Error: ",e)
+            traceback.print_exc()
+            self.Calcs = False
+
+    def importBookmarks(self):
+        self.statusbar.showMessage('Importing Bookmark List(s)...')
+        self.patientList.clear()
+        self.df = {}
+        self.baseNames = [] #initialize list of base names
+        
+        flag = 0
+        try: #catch error when user hits "ESC" in file select dialogue
+            ret = QFileDialog.getOpenFileNames(self, "Select Bookmark List(s)", self.BLDir) #returns tuple (list of file names, filter)
+            files = ret[0] #absolute file paths to bookmark lists selected
+            
+            self.dirName = os.path.dirname(files[0]) #all BL in same directory, take dir from first
+            #self.baseNames = [] #initialize list of base names
+            for i in files:
+                self.baseNames.append(os.path.basename(i)) #add the base names to a list
+            flag = 0
+            
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+            self.dirName = ''
+            self.baseNames = ''
+            flag = 1 #no imports
+
+        if flag == 0:
+            bl_import(self.df,self.StudyRoot,self.dirName,self.baseNames) #import patients
+            QMessageBox.information(self,'Message','Bookmark List(s) successfully imported.')
+            self.statusbar.showMessage('Done importing Bookmark List(s)', 1000)
+            
+            ### Populate List with Pt names ###
+            for key,patient in self.StudyRoot.patients.items():
+                self.patientList.addItem(patient.name + ' - ' + key)
+        elif flag == 1:
+            QMessageBox.information(self,'Message','No Bookmark List(s) imported.')
+            del self.StudyRoot
+            self.statusbar.clearMessage()
+
+        self.modExamDates.setEnabled(True)
+        self.btn_consult_recist_calcs.setEnabled(True)
+
+    def genRECIST(self,signal):
+        if signal == True:
+            self.root_to_use = self.StudyRoot
+        else:
+            self.root_to_use = self.FetchRoot
+        try:
+            self.root_to_use #check if patients imported
+            try:
+                #if self.Calcs == True: #check if calcs performed
+                generate_recist_sheets(self.RECISTDir, self.OutDir, self.root_to_use, self.singleSheet.isChecked())
+                #QMessageBox.information(self,'Message','RECIST worksheets generated.')
+                #elif self.Calcs == False:
+                #QMessageBox.information(self,'Message','Please perform RECIST calculations.')
+            except Exception as e:
+                QMessageBox.information(self,'Message','Please perform RECIST calculations.')
+                traceback.print_exc()
+                print('Error: ',e)
+
+        except Exception as e:
+            QMessageBox.information(self,'Message','Please import Bookmark List(s).')
+            traceback.print_exc()
+            print('Error: ',e)
+        self.statusbar.showMessage('Done generating RECIST worksheets.', 1000)
 class PlotAndGraphingDialog(QDialog, plotandgraph.Ui_plotAndGraphUtility):
     def __init__(self, parent=None):
         QMainWindow.__init__(self)
@@ -820,7 +891,6 @@ if __name__ == '__main__':
 
     me = os.getpid()
     kill_proc_tree(me)
-
 
 #CHANGELOG
 #7/6/17 commit 45177f75869b17652c82adaeddd97055c9ff15bc - Added ability to 'append' patient list

@@ -12,6 +12,8 @@ General login (located in usrp.yaml), hashed with md5
 user: nih_general_user_1 --> hash: a5e079ad94245b3aaa97126eacf72cea
 pass: ENABLE2PW1! --> hash: 79de4fb7d7846e9c24617587016572f9
 
+Communication protocol: SSL
+
 
 Notes:
 
