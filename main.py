@@ -1,7 +1,10 @@
 #! python3
 
 #Revision 7/20/17
-from PyQt5.QtWidgets import QLineEdit, QProgressBar, QDialog, QTableView, QFileDialog, QAction, QApplication, QWidget, QPushButton, QMessageBox, QDesktopWidget, QMainWindow
+from PyQt5.QtWidgets import (QLineEdit, QProgressBar, QDialog, QTableView, 
+                            QFileDialog, QAction, QApplication, QWidget, 
+                            QPushButton, QMessageBox, QDesktopWidget, QMainWindow,
+                            QStyleFactory)
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5 import QtCore
 
@@ -18,6 +21,9 @@ import plotandgraph #file holds plot window design
 import uploader #database upload page
 import login #login page
 import config
+
+#Custom widgets
+from custom_tree import PatientTree
 
 from BLImporterUIVersion import bl_import
 from RECISTComp import recist_computer
@@ -41,45 +47,6 @@ import time
 import yaml
 from pprint import pprint
 
-class CustomQTableView(QTableView):
-    '''
-    Custom view for the patient data table viewer
-    '''    
-    def __init__(self, *args, **kwargs):
-        QTableView.__init__(self, *args, **kwargs) #Use QTableView constructor
-        self.setGeometry(590,50,981,621)
-        
-    def keyPressEvent(self, event): #Reimplement the event here, in your case, do nothing
-        return
-
-class PatientModel(QtCore.QAbstractTableModel):
-    '''
-    Class to populate a table view with a pandas dataframe
-    '''
-    def __init__(self, data, parent=None):
-        QtCore.QAbstractTableModel.__init__(self, parent)
-        self._data = data
-
-    def rowCount(self, parent=None):
-        return self._data.shape[0]
-
-    def columnCount(self, parent=None):
-        return self._data.shape[1]
-
-    def data(self, index, role=QtCore.Qt.DisplayRole):
-        if index.isValid():
-            if role == QtCore.Qt.DisplayRole:
-                return str(self._data.iloc[index.row(), index.column()])
-        return None
-
-    def headerData(self, col, orientation, role):
-        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
-            return self._data.columns[col]
-        return None
-
-    def flags(self, index):
-        return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
-
 class DataOverrides(QDialog, examselect.Ui_Form):
     def __init__(self, parent=None):
         QMainWindow.__init__(self)
@@ -90,13 +57,10 @@ class DataOverrides(QDialog, examselect.Ui_Form):
             if patient.ignore == False:
                 self.patientList.addItem(patient.name + ' - ' + key)
         
-        self.view = CustomQTableView(self)
-        self.view.show()
-
         #### BUTTON FUNCTIONS ####
         self.returnToHome.clicked.connect(self.returnHome)
         self.patientList.itemClicked.connect(self.patientSelected)
-        self.patientList.itemClicked.connect(self.populate_table)
+        self.patientList.itemClicked.connect(self.populate_view)
         self.setExams.clicked.connect(self.setPatientExams)
 
         #### Signal Connections ####
@@ -177,22 +141,14 @@ class DataOverrides(QDialog, examselect.Ui_Form):
     def returnHome(self):
         self.close()
 
-    def populate_table(self):
+    def populate_view(self):
         currPt = self.patientList.currentItem().text() #current patient string
         MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
         self.selkey = MRNSID.search(currPt).group() #selected patient
 
-        # self.patient = form.StudyRoot.patients[self.selkey]
-        # self.display_table.setHorizontalHeaderLabels(self.patient.bookmark_list_fields)
-        # self.display_table.show()
-
-        
-        self.model = PatientModel(form.df[self.selkey])
-        self.view.setModel(self.model)
-
-        #self.display_table.setGeometry(590,49,981,621)
-        #self.display_table.show()
-
+        self.lineedit_patient_name.setText(currPt)
+        self.patient = form.StudyRoot.patients[self.selkey]
+        self.tree_container.addWidget(PatientTree(self.patient))
 
 class MainWindow(QMainWindow, design.Ui_mainWindow):
     
@@ -501,7 +457,9 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             getattr(self,'StudyRoot')
             self.dataoverride = DataOverrides()
             self.dataoverride.exec()
-        except AttributeError:
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
             QMessageBox.information(self,'Message','Please Import Bookmark List(s).')
 
     def launchPlotAndGraph(self):
@@ -827,6 +785,11 @@ class ENABLELoginWindow(QDialog, login.Ui_logindialog):
 
     def closeEvent(self,event):
         self.closeSignal.emit(True)
+    
+    def keyPressEvent(self,event):
+        # Did the user press the Escape key?
+        if event.key() == QtCore.Qt.Key_Escape:
+            event.ignore()
 
 class ConfigurationPage(QDialog, config.Ui_configuration):
     def __init__(self, parent=None):
@@ -902,6 +865,7 @@ if __name__ == '__main__':
     #create app instance and launch
     app = QApplication([])
     app.setApplicationName('ENABLE 2.0')
+    #app.setStyle(QStyleFactory.create("Fusion"))
     
     form = MainWindow() #dont show yet, show after validated log-in
 

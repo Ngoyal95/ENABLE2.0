@@ -152,29 +152,6 @@ def extractData(df,ID,root,columnNames):
     link.exams[1].add_current(True) #set the first exam to be current by default
     link.exams[examCount].add_baseline(True) #set last exam to baseline by default
 
-    #----prompt user for course# and day----#
-    # ptName = link.name + ' (' + str(ID) + ')'
-    # textMsg = "Enter course# & day# (numbers only) for patient:\n" + ptName
-    # title = 'Enter patient data'
-    # fieldNames = ['  Course#:','  Day#:'] #spaces added for appearance formatting
-    
-    # try:
-    # 	fieldVals = easygui.multenterbox(textMsg, title, fieldNames)
-    # except TypeError:
-    # 	course = '-'
-    # 	day = '-'
-
-    # if fieldVals == ['', '']:
-    # 	course,day = ['-','-']
-    # elif fieldVals == None:
-    # 	course,day = ['-','-']
-    # else:
-    # 	course,day = fieldVals
-    # 	link.add_courseday(course,day)
-
-    #at this point all patient data has been stored in datastructures held by StudyRoot
-    #next: Perform RECIST Calcs **** DONE WITH SEPERATE BUTTON IN GUI *****
-
 def extractLesionData(df,index,exam,columnNames):
     '''
     Function used to pull the data for a lesion from the bookmark list.
