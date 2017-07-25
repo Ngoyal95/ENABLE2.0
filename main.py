@@ -1,7 +1,7 @@
 #! python3
 
 #Revision 7/20/17
-from PyQt5.QtWidgets import QLineEdit, QProgressBar, QDialog, QTableWidget, QFileDialog, QAction, QApplication, QWidget, QPushButton, QMessageBox, QDesktopWidget, QMainWindow
+from PyQt5.QtWidgets import QLineEdit, QProgressBar, QDialog, QTableView, QFileDialog, QAction, QApplication, QWidget, QPushButton, QMessageBox, QDesktopWidget, QMainWindow
 from PyQt5.QtGui import QIcon, QFont
 from PyQt5 import QtCore
 
@@ -41,10 +41,21 @@ import time
 import yaml
 from pprint import pprint
 
+class CustomQTableView(QTableView):
+    '''
+    Custom view for the patient data table viewer
+    '''    
+    def __init__(self, *args, **kwargs):
+        QTableView.__init__(self, *args, **kwargs) #Use QTableView constructor
+        self.setGeometry(590,50,981,621)
+        
+    def keyPressEvent(self, event): #Reimplement the event here, in your case, do nothing
+        return
+
 class PatientModel(QtCore.QAbstractTableModel):
-    """
+    '''
     Class to populate a table view with a pandas dataframe
-    """
+    '''
     def __init__(self, data, parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent)
         self._data = data
@@ -66,15 +77,21 @@ class PatientModel(QtCore.QAbstractTableModel):
             return self._data.columns[col]
         return None
 
+    def flags(self, index):
+        return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEditable
+
 class DataOverrides(QDialog, examselect.Ui_Form):
     def __init__(self, parent=None):
         QMainWindow.__init__(self)
         self.setupUi(self) #setup the selection window
 
-        #### Initialize Data ####
+        #### Initialize ####
         for key,patient in form.StudyRoot.patients.items(): #note, StudyRoot belongs to form (main application window)
             if patient.ignore == False:
                 self.patientList.addItem(patient.name + ' - ' + key)
+        
+        self.view = CustomQTableView(self)
+        self.view.show()
 
         #### BUTTON FUNCTIONS ####
         self.returnToHome.clicked.connect(self.returnHome)
@@ -85,7 +102,6 @@ class DataOverrides(QDialog, examselect.Ui_Form):
         #### Signal Connections ####
         self.currentExamSelect.currentIndexChanged.connect(self.updateOptions) #update the baseline exam dropdown menu
         
-
     #### Functions ####
     def setPatientExams(self):
         '''
@@ -170,8 +186,10 @@ class DataOverrides(QDialog, examselect.Ui_Form):
         # self.display_table.setHorizontalHeaderLabels(self.patient.bookmark_list_fields)
         # self.display_table.show()
 
+        
         self.model = PatientModel(form.df[self.selkey])
-        self.display_table.setModel(self.model)
+        self.view.setModel(self.model)
+
         #self.display_table.setGeometry(590,49,981,621)
         #self.display_table.show()
 
