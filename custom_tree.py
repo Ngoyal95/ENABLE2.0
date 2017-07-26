@@ -47,10 +47,8 @@ class PatientTree(QWidget):
         '''
         for key,exam in pt.exams.items():
             column = 0
-            #self.exam_item = QTreeWidgetItem(parent,[', '.join([str(exam.date),str(exam.time),str(exam.modality),str(exam.description)])])
             self.exam_item = QTreeWidgetItem(parent)
             self.exam_item.setText(column,', '.join([str(exam.date),str(exam.modality),str(exam.description)]))
-            self.exam_item.setExpanded(True)
 
             for lesion in exam.lesions:
                 column = 1
@@ -72,7 +70,6 @@ class PatientTree(QWidget):
                         self.lesion_item.setTextAlignment(column,4) #align center of column
                         column += 1
                     self.lesion_item.setFlags(self.lesion_item.flags() | QtCore.Qt.ItemIsEditable)
-                    self.lesion_item.setExpanded(True)
 
 #### Test Code ####
 if __name__ == "__main__":

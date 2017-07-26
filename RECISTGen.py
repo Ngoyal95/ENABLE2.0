@@ -4,9 +4,6 @@ import docx
 import re
 import os
 import pathlib
-# import comtypes.client
-# import glob
-# import time
 
 def generate_recist_sheets(RECISTDir, OutDir, StudyRoot,singleSheet):
     '''
@@ -27,24 +24,6 @@ def generate_recist_sheets(RECISTDir, OutDir, StudyRoot,singleSheet):
                     if exam.ignore == False:
                         recist_sheet(RECISTDir, OutDir, patient, exam)
     
-    #Conversion to PDF, throws an error, but does create PDFs
-    # word = comtypes.client.CreateObject('Word.Application') #launch Word instance to convert files to PDFs
-    # time.sleep(0.001)
-    # in_files = glob.glob(OutDir + "/*.docx")
-    # try:
-    #     for in_file in in_files:
-    #         out_file = os.path.splitext(in_file)[0]
-    #         doc = word.Documents.Open(in_file)
-    #         doc.SaveAs(out_file,FileFormat = 17)
-    #         doc.Close()
-    # except Exception as e:
-    #     word.Quit()
-    #     word = None
-    #     print('Error: ',e)
-    
-    # if word is not None:
-    #     word.Quit()
-
 def get_mrn_sid(file):
     '''
     Extract the MRN and SID from the BL filename (expected format is MRN#######_##-X-####)

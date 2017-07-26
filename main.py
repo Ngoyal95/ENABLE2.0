@@ -1,17 +1,16 @@
 #! python3
 
-#Revision 7/20/17
+#Revision 7/26/17
 from PyQt5.QtWidgets import (QLineEdit, QProgressBar, QDialog, QTableView, 
                             QFileDialog, QAction, QApplication, QWidget, 
                             QPushButton, QMessageBox, QDesktopWidget, QMainWindow,
-                            QStyleFactory)
-from PyQt5.QtGui import QIcon, QFont
+                            )
 from PyQt5 import QtCore, QtGui
 
 
 #Dialog templates
 import design # This file holds our MainWindow and all design related things
-import examselect #file holds exam selection window design
+import data #file holds data entry page
 import uploader #database upload page
 import login #login page
 import config
@@ -41,7 +40,7 @@ import time
 import yaml
 from pprint import pprint
 
-class DataOverrides(QDialog, examselect.Ui_Form):
+class DataEntry(QDialog, data.Ui_Form):
     def __init__(self, parent=None):
         QMainWindow.__init__(self)
         self.setupUi(self) #setup the selection window
@@ -142,7 +141,15 @@ class DataOverrides(QDialog, examselect.Ui_Form):
 
         self.lineedit_patient_name.setText(currPt)
         self.patient = form.StudyRoot.patients[self.selkey]
-        self.tree_container.addWidget(PatientTree(self.patient))
+
+        if hasattr(self,'patient_tree'):
+            self.patient_tree.setParent(None) #drop pointer so multiple don't get added to the tree_container
+            del self.patient_tree
+            self.patient_tree = PatientTree(self.patient)
+            self.tree_container.addWidget(self.patient_tree)
+        else:
+            self.patient_tree = PatientTree(self.patient)
+            self.tree_container.addWidget(self.patient_tree)
 
 class MainWindow(QMainWindow, design.Ui_mainWindow):
     
@@ -175,7 +182,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         configAction = QAction(QtGui.QIcon('../icons/configIcon.png'),'Configure',self)
         configAction.triggered.connect(self.config)
         self.mainToolbar.addAction(configAction)
-        self.modExamDates.clicked.connect(self.launchExamSelect)
+        self.modExamDates.clicked.connect(self.launch_data_entry)
 
         #### Connect to DB ####
         # self.conf = yaml.load(open(os.path.realpath('usrp.yml')))
@@ -356,7 +363,6 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             self.patientList.clear()
             self.excludeList.clear()
             del self.StudyRoot #delete the study root
-            del self.Calcs #delete to catch when patients are removed and user attemps to generate sheets
             self.btn_consult_recist_calcs.setEnabled(False)
             self.btn_consult_generate_recist.setEnabled(False)
             self.databaseUploader.setEnabled(False)
@@ -443,11 +449,11 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
-    def launchExamSelect(self):
+    def launch_data_entry(self):
         #launch exam selection dialog if the StudyRoot exists (BLs have been imported)
         try:
             getattr(self,'StudyRoot')
-            self.dataoverride = DataOverrides()
+            self.dataoverride = DataEntry()
             self.dataoverride.exec()
         except Exception as e:
             print(e)
@@ -546,6 +552,9 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             self.Calcs = False
 
     def importBookmarks(self):
+        if hasattr(self,'StudyRoot') == False:
+            form.StudyRoot = BLDataClasses.StudyRoot()
+        
         self.statusbar.showMessage('Importing Bookmark List(s)...')
         self.patientList.clear()
         self.df = {}
@@ -557,7 +566,6 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             files = ret[0] #absolute file paths to bookmark lists selected
             
             self.dirName = os.path.dirname(files[0]) #all BL in same directory, take dir from first
-            #self.baseNames = [] #initialize list of base names
             for i in files:
                 self.baseNames.append(os.path.basename(i)) #add the base names to a list
             flag = 0
@@ -571,38 +579,31 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
 
         if flag == 0:
             bl_import(self.df,self.StudyRoot,self.dirName,self.baseNames) #import patients
-            QMessageBox.information(self,'Message','Bookmark List(s) successfully imported.')
-            self.statusbar.showMessage('Done importing Bookmark List(s)', 1000)
             
-            ### Populate List with Pt names ###
             for key,patient in self.StudyRoot.patients.items():
                 self.patientList.addItem(patient.name + ' - ' + key)
+            
+            self.modExamDates.setEnabled(True)
+            self.btn_consult_recist_calcs.setEnabled(True)
+            self.statusbar.showMessage('Done importing Bookmark List(s)', 1000)
+
         elif flag == 1:
-            QMessageBox.information(self,'Message','No Bookmark List(s) imported.')
+            self.statusbar.showMessage('No Bookmark List(s) imported.',1000)
             del self.StudyRoot
             self.statusbar.clearMessage()
 
-        self.modExamDates.setEnabled(True)
-        self.btn_consult_recist_calcs.setEnabled(True)
+
 
     def genRECIST(self,signal):
         if signal == True:
             self.root_to_use = self.StudyRoot
         else:
             self.root_to_use = self.FetchRoot
+        
         try:
             self.root_to_use #check if patients imported
-            try:
-                #if self.Calcs == True: #check if calcs performed
-                generate_recist_sheets(self.RECISTDir, self.OutDir, self.root_to_use, self.singleSheet.isChecked())
-                #QMessageBox.information(self,'Message','RECIST worksheets generated.')
-                #elif self.Calcs == False:
-                #QMessageBox.information(self,'Message','Please perform RECIST calculations.')
-            except Exception as e:
-                QMessageBox.information(self,'Message','Please perform RECIST calculations.')
-                traceback.print_exc()
-                print('Error: ',e)
-
+            generate_recist_sheets(self.RECISTDir, self.OutDir, self.root_to_use, self.singleSheet.isChecked())
+            self.statusbar.showMessage('Generating RECIST worksheets.',1000)
         except Exception as e:
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
             traceback.print_exc()
@@ -765,8 +766,7 @@ if __name__ == '__main__':
     #create app instance and launch
     app = QApplication([])
     app.setApplicationName('ENABLE 2.0')
-    #app.setStyle(QStyleFactory.create("Fusion"))
-    
+
     form = MainWindow() #dont show yet, show after validated log-in
 
     app.exec_()

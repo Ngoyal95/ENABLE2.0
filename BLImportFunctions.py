@@ -1,6 +1,5 @@
 #Code to import a Bookmark List
 #Revision 7/7/17
-import easygui
 import os
 import pandas as pd
 import BLDataClasses
