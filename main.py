@@ -25,7 +25,7 @@ import config
 #Custom widgets
 from custom_tree import PatientTree
 
-from BLImporterUIVersion import bl_import
+from BLImportFunctions import bl_import
 from RECISTComp import recist_computer
 import pandas as pd
 from RECISTGen import generate_recist_sheets
