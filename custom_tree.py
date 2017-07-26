@@ -49,7 +49,7 @@ class PatientTree(QWidget):
             column = 0
             #self.exam_item = QTreeWidgetItem(parent,[', '.join([str(exam.date),str(exam.time),str(exam.modality),str(exam.description)])])
             self.exam_item = QTreeWidgetItem(parent)
-            self.exam_item.setText(column,', '.join([str(exam.date),str(exam.time),str(exam.modality),str(exam.description)]))
+            self.exam_item.setText(column,', '.join([str(exam.date),str(exam.modality),str(exam.description)]))
             self.exam_item.setExpanded(True)
 
             for lesion in exam.lesions:
