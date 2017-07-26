@@ -6,18 +6,12 @@ from PyQt5.QtWidgets import (QLineEdit, QProgressBar, QDialog, QTableView,
                             QPushButton, QMessageBox, QDesktopWidget, QMainWindow,
                             QStyleFactory)
 from PyQt5.QtGui import QIcon, QFont
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 
-#plotting dependencies
-import pyqtgraph as pg
-import pyqtgraph.exporters
-from pyqtgraph.Qt import QtCore, QtGui
-import numpy as np
 
 #Dialog templates
 import design # This file holds our MainWindow and all design related things
 import examselect #file holds exam selection window design
-import plotandgraph #file holds plot window design
 import uploader #database upload page
 import login #login page
 import config
@@ -182,7 +176,6 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         configAction.triggered.connect(self.config)
         self.mainToolbar.addAction(configAction)
         self.modExamDates.clicked.connect(self.launchExamSelect)
-        self.plotsAndGraphs.clicked.connect(self.launchPlotAndGraph)
 
         #### Connect to DB ####
         # self.conf = yaml.load(open(os.path.realpath('usrp.yml')))
@@ -375,24 +368,23 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             pass
         
     def settings(self):
-        #get application settings (default directories)
         try:
+            #settings have been selected before
             with shelve.open('LocalPreferences') as shelfFile:
                 self.BLDir = shelfFile['BLDir']
                 self.RECISTDir = shelfFile['RECISTDir']
                 self.OutDir = shelfFile['OutDir']
                 self.mongodb_address = shelfFile['mongodb_address']
                 shelfFile.close()
-        except KeyError:
-            QMessageBox.information(self,'Message','Please configure ENABLE 2')
+        except:
+            #need to configure for the first time
+            QMessageBox.information(self,'Message','First time use detected. Please configure ENABLE 2')
             self.config()
 
     def config(self):
         self.config_page = ConfigurationPage()
         self.config_page.exec()
         self.settings()
-
-    
 
     def genSpreadsheets(self):   
         #call the function to create spreadsheets
@@ -461,22 +453,6 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             print(e)
             traceback.print_exc()
             QMessageBox.information(self,'Message','Please Import Bookmark List(s).')
-
-    def launchPlotAndGraph(self):
-        try:
-            self.StudyRoot #check if patients imported
-            try:
-                if self.Calcs == True: #check if calcs performed
-                    self.plotandgraph = PlotAndGraphingDialog()
-                    self.plotandgraph.exec()
-                elif self.Calcs == False:
-                    QMessageBox.information(self,'Message','Please perform RECIST calculations.')
-            except AttributeError:
-                QMessageBox.information(self,'Message','Please perform RECIST calculations.')
-
-        except Exception:
-            QMessageBox.information(self,'Message','Please import Bookmark List(s).')
-    
 
 
     def launchDbUploadDialog(self):
@@ -632,104 +608,6 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             traceback.print_exc()
             print('Error: ',e)
         self.statusbar.showMessage('Done generating RECIST worksheets.', 1000)
-class PlotAndGraphingDialog(QDialog, plotandgraph.Ui_plotAndGraphUtility):
-    def __init__(self, parent=None):
-        QMainWindow.__init__(self)
-        self.setupUi(self) #setup the graphing window
-
-        #Patient tab
-        for key,patient in form.StudyRoot.patients.items(): #note, StudyRoot belongs to form (main application window)
-            if patient.ignore == False:
-             self.patientList.addItem(patient.name + ' - ' + key)
-
-        #Waterfall Plot tab
-        for key,patient in form.StudyRoot.patients.items(): #note, StudyRoot belongs to form (main application window)
-            if patient.ignore == False:
-             self.cohortList.addItem(patient.name + ' - ' + key)
-
-        #### BUTTON FUNCTIONS ####
-        self.genSwimmerPlot.clicked.connect(self.SWP)
-        self.genSpiderPlot.clicked.connect(self.SP)
-        self.genWaterfallPlot.clicked.connect(self.WFP)
-        self.exportPlotData.clicked.connect(self.EPD)
-        self.clearPlot.clicked.connect(self.CP)
-
-        #### INDIVIDUAL PT PLOTS ####
-        self.patientList.itemSelectionChanged.connect(self.plotPatientSelected)
-
-       ####PLOTS ####
-    def plotPatientSelected(self):
-        '''
-        Plot patient Target RECIST sum vs.Time
-        '''
-        self.graphicsView.clear()
-
-        currPt = self.patientList.currentItem().text() #current patient string
-        MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
-        self.selkey = MRNSID.search(currPt).group() #selected patient
-
-        #display patient exams
-        self.link = form.StudyRoot.patients[self.selkey].exams.items() #link contains the exams
-        self.trecistsums = []
-        self.exdate = []
-        for key,exam in self.link:
-            self.trecistsums.append(exam.trecistsum)
-            self.exdate.append(exam.date)
-        
-        self.exdateTup = list(enumerate(self.exdate))
-
-        self.plt1 = pg.PlotDataItem(self.trecistsums,pen='b')
-        self.plt2 = pg.PlotDataItem(self.trecistsums, pen=None,symbol='o',symbolBrush='k')
-        self.graphicsView.addItem(self.plt1)
-        self.graphicsView.addItem(self.plt2)
-        self.graphicsView.showGrid(x=False,y=True,alpha = 0.5)
-        ax = self.graphicsView.getAxis('bottom')
-        ax.setTicks([self.exdateTup,[]])
-        self.graphicsView.setLabel('left',text ='Target RECSIT Sum vs. Exam')
-        self.graphicsView.setLabel('bottom',text='Date')
-        self.graphicsView.setTitle(title='Target RECIST Sum vs. Exam')
-  
-    def WFP(self):
-        self.graphicsView.clear()
-        self.vals = waterfallPlot(form.StudyRoot)
-        self.x = np.arange(len(self.vals))
-        self.bg1 = pg.BarGraphItem(x=self.x, height=self.vals, width=1, brush='b')
-        self.graphicsView.showGrid(x=False,y=True,alpha = 0.5)
-        self.graphicsView.addItem(self.bg1)
-
-        #formatting
-        self.graphicsView.addLine(y=-30,pen = {'color':'k', 'width': 2,'style':QtCore.Qt.DashLine}) #partial response line
-        self.graphicsView.addLine(y=20,pen = {'color':'k', 'width': 2,'style':QtCore.Qt.DashLine}) #PD line
-        self.graphicsView.setLabel('left',text ='Target Lesion % Change from Baseline')
-        self.graphicsView.setLabel('bottom',text='Patient')
-        self.graphicsView.setTitle(title='Waterfall Plot')
-
-    def SP(self):
-        #spider plot
-        self.graphicsView.clear()
-        self.vals = spiderPlot(form.StudyRoot) #returns dict of format {'key':[[measurements],[weeks from baseline],[days from baseline]]}
-        for key,tup in self.vals.items():
-            self.scp1 = pg.PlotDataItem(tup[1],tup[0],pen = 'k')
-            self.scp2 = pg.PlotDataItem(tup[1],tup[0], pen=None,symbol='o',symbolBrush='k')
-            self.graphicsView.addItem(self.scp1)
-            self.graphicsView.addItem(self.scp2)
-        
-
-        self.graphicsView.setLabel('left',text ='Target sum relative to baseline')
-        self.graphicsView.setLabel('bottom',text='Weeks from baseline')
-        self.graphicsView.setTitle(title='Spider Plot')
-
-    def SWP(self):
-        #swimmerplot
-        pass
-
-    def EPD(self):
-        exportPlotData(form.StudyRoot,form.OutDir) #call external function to generate
-        QMessageBox.information(self,'Message','Plot data exported.')
-
-    #### PLOTTING SHARED FNX ####
-    def CP(self):
-        self.graphicsView.clear()
 
 class DatabaseUploadDialog(QDialog, uploader.Ui_databaseuploaddialog):
     def __init__(self, parent=None):
@@ -797,17 +675,26 @@ class ConfigurationPage(QDialog, config.Ui_configuration):
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon('../icons/configIcon.png'))     
 
+        #set known/or initialize
         shelfFile = shelve.open('LocalPreferences')
-        shelfFile['RECISTDir'] = os.path.dirname(os.path.realpath('RECISTForm.docx'))
-        shelfFile['LMUploader'] = os.path.dirname(os.path.realpath('RadiologyImportClient.jar'))
-        self.bl_directory.setText(shelfFile['BLDir'])
-        self.output_directory.setText(shelfFile['OutDir'])
-        shelfFile.close()
+
+        shelfFile['RECISTDir'] = os.path.dirname(os.path.realpath('../RECISTForm.docx'))
+        shelfFile['LMUploader'] = os.path.dirname(os.path.realpath('../RadiologyImportClient.jar'))
+        shelfFile['mongodb_address'] = 'mongodb://db.patients.net'
+        
+        try:
+            self.bl_directory.setText(shelfFile['BLDir'])
+            self.output_directory.setText(shelfFile['OutDir'])
+            shelfFile.close()
+        except Exception as e:
+            #KeyError thrown if launched without the shelve files existing.
+            #catch error and prevent crash since the config panel will come up and settings will be reloaded after config panel is closed.
+            print(e)
+            traceback.print_exc()
 
         self.btn_bl_directory.clicked.connect(self.bl_directory_select)
         self.btn_output_directory.clicked.connect(self.output_directory_select)
         self.btn_db_path.clicked.connect(self.set_db_address)
-
         self.admin_pass.textChanged.connect(self.admin_pass_check)
         
         self.show()
@@ -815,18 +702,35 @@ class ConfigurationPage(QDialog, config.Ui_configuration):
     def bl_directory_select(self):
         shelfFile = shelve.open('LocalPreferences')
         BLDirT = str(QFileDialog.getExistingDirectory(self, "Select Bookmark List Directory"))
-        if BLDirT != '':
-            shelfFile['BLDir'] = BLDirT
-        else:
-            QMessageBox.information(self,'Message','Directory unchanged.')
+        try:
+            if BLDirT != '':
+                shelfFile['BLDir'] = BLDirT
+                self.bl_directory.setText(shelfFile['BLDir'])
+            else:
+                #user may have hit ESC, but on first launch this will crash ENABLE.
+                self.bl_directory.setText(shelfFile['BLDir'])
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+            QMessageBox.information(self,'Message','Bookmark List Directory must be selected.')
+            self.bl_directory_select()
         shelfFile.close()
 
     def output_directory_select(self):
+        shelfFile = shelve.open('LocalPreferences')
         OutDirT = str(QFileDialog.getExistingDirectory(self, "Select Output Directory"))
-        if OutDirT != '':
-            shelfFile['OutDir'] = OutDirT
-        else:
-            QMessageBox.information(self,'Message','Directory unchanged.')
+        try:
+            if OutDirT != '':
+                shelfFile['OutDir'] = OutDirT
+                self.output_directory.setText(shelfFile['OutDir'])
+            else:
+                #user may have hit ESC, but on first launch this will crash ENABLE.
+                self.output_directory.setText(shelfFile['OutDir'])
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
+            QMessageBox.information(self,'Message','Output Directory must be selected.')
+            self.output_directory_select()
         shelfFile.close()
 
     def admin_pass_check(self):
@@ -858,10 +762,6 @@ if __name__ == '__main__':
     myappid = u'ENABLE 2.0_V1'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
-    #pyqtgraph settings
-    pg.setConfigOption('background', 'w')
-    pg.setConfigOption('foreground', 'k')
-
     #create app instance and launch
     app = QApplication([])
     app.setApplicationName('ENABLE 2.0')
@@ -873,9 +773,3 @@ if __name__ == '__main__':
 
     me = os.getpid()
     kill_proc_tree(me)
-
-#CHANGELOG
-#7/6/17 commit 45177f75869b17652c82adaeddd97055c9ff15bc - Added ability to 'append' patient list
-#7/7/17 commit f5c60f23f0f25f3146ac38c2ab8755062d5894a0 - Fixed error where exams were incorrectly marked as containsnoT_NT_NL = True due to faulty logic in BLImporterUIVersion.py around line 140
-#7/11/17 commit 7ae65da84eb97f6e5c3640bd4c8f6e343500b42e - added ablity to export consult log
-#7/12/17 commit 46788ce22a5be2eb805079e429313faab986e305 - modified RECIST gen to print sheets for every exam
