@@ -165,7 +165,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
 
         #### Init ####
         self.settings() #load user settings
-        self.setWindowIcon(QtGui.QIcon('../icons/enable_icon.png'))
+        self.setWindowIcon(QtGui.QIcon('icons/enable_icon.png'))
         self.consultDate.setDate(QtCore.QDate.currentDate())
         self.StudyRoot = BLDataClasses.StudyRoot() #stores imported Bookmark List data
         self.FetchRoot = BLDataClasses.StudyRoot() #stores data pulled from ENABLE database
@@ -175,7 +175,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.recist_sheets_signal.connect(self.genRECIST)
 
         #### Toolbar and Secondary Dialog Launch ####
-        configAction = QAction(QtGui.QIcon('../icons/configIcon.png'),'Configure',self)
+        configAction = QAction(QtGui.QIcon('icons/configIcon.png'),'Configure',self)
         configAction.triggered.connect(self.config)
         self.mainToolbar.addAction(configAction)
         self.modExamDates.clicked.connect(self.launch_data_entry)
@@ -377,6 +377,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
                 self.RECISTDir = shelfFile['RECISTDir']
                 self.OutDir = shelfFile['OutDir']
                 self.mongodb_address = shelfFile['mongodb_address']
+                #print(self.BLDir,self.RECISTDir,self.OutDir)
                 shelfFile.close()
         except:
             #need to configure for the first time
@@ -407,8 +408,6 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
             print("Error: ",e)
         self.statusbar.showMessage('Done generating spreadsheets.', 1000)
-
-   
 
     def genConsultLog(self):
         self.vals = [
@@ -619,10 +618,10 @@ class ENABLELoginWindow(QDialog, login.Ui_logindialog):
         super(ENABLELoginWindow,self).__init__(parent)
         self.setupUi(self) #setup the graphing window
 
-        self.pixmax = QtGui.QPixmap('../icons/enable_icon.png')
+        self.pixmax = QtGui.QPixmap('icons/enable_icon.png')
         self.ENABLE_logo.setPixmap(self.pixmax)
         self.ENABLE_logo.show()
-        self.setWindowIcon(QtGui.QIcon('../icons/enable_icon.png'))
+        self.setWindowIcon(QtGui.QIcon('icons/enable_icon.png'))
         
 
         self.btn_log_in.clicked.connect(self.run_login)
@@ -668,13 +667,13 @@ class ConfigurationPage(QDialog, config.Ui_configuration):
     def __init__(self, parent=None):
         super(ConfigurationPage,self).__init__(parent)
         self.setupUi(self)
-        self.setWindowIcon(QtGui.QIcon('../icons/configIcon.png'))     
+        self.setWindowIcon(QtGui.QIcon('icons/configIcon.png'))     
 
         #set known/or initialize
         shelfFile = shelve.open('LocalPreferences')
 
-        shelfFile['RECISTDir'] = os.path.dirname(os.path.realpath('../RECISTForm.docx'))
-        shelfFile['LMUploader'] = os.path.dirname(os.path.realpath('../RadiologyImportClient.jar'))
+        shelfFile['RECISTDir'] = os.path.dirname(os.path.realpath('./files/RECISTForm.docx'))
+        shelfFile['LMUploader'] = os.path.dirname(os.path.realpath('./files/RadiologyImportClient.jar'))
         shelfFile['mongodb_address'] = 'mongodb://db.patients.net'
         
         try:

@@ -1,5 +1,5 @@
-'RECISTDir', (0, 40)
-'LMUploader', (512, 40)
+'RECISTDir', (0, 50)
+'LMUploader', (512, 50)
 'mongodb_address', (1024, 35)
 'BLDir', (1536, 30)
 'OutDir', (2048, 42)

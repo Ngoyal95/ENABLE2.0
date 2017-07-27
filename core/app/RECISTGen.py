@@ -1,14 +1,14 @@
 #RECIST Worksheet generator module
-#Revision 6/21/17
+#Revision 7/27/17
 import docx
 import re
-import os
 import pathlib
 
 def generate_recist_sheets(RECISTDir, OutDir, StudyRoot,singleSheet):
     '''
     Generate the RECIST sheets for each patient in the study (if they have not been put in the excludedlist)
     '''
+    print(RECISTDir)
     for key,patient in StudyRoot.patients.items():
         if patient.ignore == False:
             if singleSheet == True:
