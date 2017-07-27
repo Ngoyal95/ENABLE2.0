@@ -96,6 +96,7 @@ class DataEntry(QDialog, data.Ui_Form):
         for key,exam in self.temp_patient.exams.items():
             self.exams.append(str(key) + ': ' + str(exam.modality) + ' - ' + str(exam.date))
         
+        self.baselineExamSelect.clear()
         self.baselineExamSelect.addItems(self.exams) #populate list
         self.btn_set_baseline.setEnabled(True)
         self.populate_view()
@@ -119,13 +120,18 @@ class DataEntry(QDialog, data.Ui_Form):
             
         self.patient_tree.itemChanged.connect(self.update_temp_patient_obj)
 
-    def update_temp_patient_obj(self,signal):
-        print('update')
+    def update_temp_patient_obj(self,item,col):
+        
+        print(item,col)
 
     def set_patient_params(self):
         self.parent().StudyRoot.patients[self.selkey] = self.temp_patient
     
     def create_patient_tree(self):
+        '''
+        Create QTreeWidget populated with a patient's data for the DataEntry dialog.
+        Assumes that self.temp_patient is the patient of interest and that the variable belongs to the dialog.
+        '''
         self.tree = QTreeWidget()
         self.root = self.tree.invisibleRootItem()
         
@@ -168,6 +174,7 @@ class DataEntry(QDialog, data.Ui_Form):
                 self.exam_item.setCheckState (column, QtCore.Qt.Checked)
             else:
                 self.exam_item.setCheckState (column, QtCore.Qt.Unchecked)
+                self.exam_item.setDisabled(True) #don't allow user to interact with item if these exams are to be ignored (prevents them from checking the box)
 
             for lesion in exam.lesions:
                 column = 1
@@ -181,8 +188,7 @@ class DataEntry(QDialog, data.Ui_Form):
                                         lesion.params['Series'],
                                         lesion.params['Slice#'],
                                         round(lesion.params['RECIST Diameter (mm)']/10,1)
-                                        ]
-                                        
+                                        ]        
                     self.lesion_item = QTreeWidgetItem(self.exam_item)
                     self.lesion_item.setCheckState(column,QtCore.Qt.Checked)
                     for param_str in self.param_list:
