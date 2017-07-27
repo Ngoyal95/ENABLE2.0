@@ -190,7 +190,6 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.removePatients.clicked.connect(self.clearBookmarks)
         self.excludePatient.clicked.connect(self.removeSelectedPatient)  #exclude selected patient
         self.includePatient.clicked.connect(self.includeSelectedPatient)  #include patient
-        self.patientListAppend.clicked.connect(self.appendPatientList)
         self.patientList.clicked.connect(self.updateConsult)
         self.generateConsultLog.clicked.connect(self.genConsultLog)
         self.databaseUploader.clicked.connect(self.launchDbUploadDialog) #open uploader dialog
@@ -235,49 +234,6 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.recist_sheets_signal.emit(True)
 
     #### Consult Tab Functions ####
-    def appendPatientList(self):
-        self.appendList = [] #list specifically for appending
-        try:
-            getattr(self,'StudyRoot')  #crash if StudyRoot not available  
-            self.statusbar.showMessage('Appending Patient List...')
-            flag = 0
-            try: #catch error when user hits "ESC" in file select dialogue
-                ret = QFileDialog.getOpenFileNames(self, "Select Bookmark List(s)", self.BLDir) #returns tuple (list of file names, filter)
-                files = ret[0] #absolute file paths to bookmark lists selected
-                
-                self.dirName = os.path.dirname(files[0]) #all BL in same directory, take dir from first
-                for i in files:
-                    if i not in self.baseNames: #only add if not already in list
-                        self.baseNames.append(os.path.basename(i)) #add the base names to a list
-                    self.appendList.append(os.path.basename(i))
-                flag = 0
-                
-            except Exception as e:
-                print("Error: ",e)
-                traceback.print_exc()
-                self.dirName = ''
-                self.baseNames = ''
-                flag = 1 #no imports
-        
-            if flag == 0:
-                #for self.file in self.baseNames:
-                bl_import(self.df,self.StudyRoot,self.dirName,self.appendList) #send one patient at a time, adding them to the StudyRoot one at a time
-                QMessageBox.information(self,'Message','Bookmark List(s) successfully appended.')
-                self.statusbar.showMessage('Done importing Bookmark List(s)', 1000)
-                
-                ### Populate List with Pt names ###
-                self.patientList.clear() #cleat to update
-                for key,patient in self.StudyRoot.patients.items():
-                    self.patientList.addItem(patient.name + ' - ' + key)
-            elif flag == 1:
-                QMessageBox.information(self,'Message','No Bookmark List(s) imported.')
-                del self.StudyRoot
-                self.statusbar.clearMessage()
-        except Exception as e:
-            print("Error: ",e)
-            traceback.print_exc()
-            self.importBookmarks()
-
     def updateConsult(self):
         self.currPt = self.patientList.currentItem().text()
         self.MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
@@ -321,8 +277,6 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         except Exception:
             QMessageBox.information(self,'Message','Please import Bookmark List(s).')
         self.statusbar.showMessage('Done.', 1000)
-
-
 
     def removeSelectedPatient(self):
         #remove highlighted patients, flag them in StudyRoot so they are skipped (ignore == True)
@@ -582,8 +536,6 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             self.statusbar.showMessage('No Bookmark List(s) imported.',1000)
             del self.StudyRoot
             self.statusbar.clearMessage()
-
-
 
     def genRECIST(self,signal):
         if signal == True:
