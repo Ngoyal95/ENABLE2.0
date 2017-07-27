@@ -23,7 +23,7 @@ class PatientTree(QWidget):
                         'Sub-Type',
                         'Series',
                         'Slice#',
-                        'RECIST Diameter (mm)'
+                        'RECIST Diameter (cm)'
                         ]
 
         self.headers_item = QTreeWidgetItem(self.headers)
@@ -49,6 +49,11 @@ class PatientTree(QWidget):
             column = 0
             self.exam_item = QTreeWidgetItem(parent)
             self.exam_item.setText(column,', '.join([str(exam.date),str(exam.modality),str(exam.description)]))
+            
+            if exam.ignore == False:
+                self.exam_item.setCheckState (column, QtCore.Qt.Checked)
+            else:
+                self.exam_item.setCheckState (column, QtCore.Qt.Unchecked)
 
             for lesion in exam.lesions:
                 column = 1
@@ -61,16 +66,17 @@ class PatientTree(QWidget):
                                         lesion.params['Sub-Type'],
                                         lesion.params['Series'],
                                         lesion.params['Slice#'],
-                                        round(lesion.params['RECIST Diameter (mm)'],2)
+                                        round(lesion.params['RECIST Diameter (mm)']/10,1)
                                         ]
                                         
                     self.lesion_item = QTreeWidgetItem(self.exam_item)
+                    self.lesion_item.setCheckState(column,QtCore.Qt.Checked)
                     for param_str in self.param_list:
                         self.lesion_item.setText(column,str(self.param_list[column-1]))
                         self.lesion_item.setTextAlignment(column,4) #align center of column
                         column += 1
                     self.lesion_item.setFlags(self.lesion_item.flags() | QtCore.Qt.ItemIsEditable)
-
+                    
 #### Test Code ####
 if __name__ == "__main__":
     patient = BLDataClasses.Patient('1234567','12-C-1250','Bob Smith',['Field1','Field2'])

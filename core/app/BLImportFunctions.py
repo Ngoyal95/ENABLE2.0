@@ -112,7 +112,7 @@ def extractData(df,ID,root,columnNames):
                 link.exams[examCount].add_date_time_modality_description(date,time,modality,description)
 
                 if beforeBaselineReg.search(lesionHeader) is not None:
-                    #exam is before baseline, set it
+                    #exam is before baseline, set it to ignore
                     link.exams[examCount].add_ignore(True)    
     
     for key,exam in link.exams.items():

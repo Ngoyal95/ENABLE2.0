@@ -28,6 +28,7 @@ import hashlib
 import pymongo
 import time
 import yaml
+import copy
 from PyQt5.QtWidgets import (QLineEdit, QProgressBar, QDialog, QTableView, 
                             QFileDialog, QAction, QApplication, QWidget, 
                             QPushButton, QMessageBox, QDesktopWidget, QMainWindow,
@@ -48,56 +49,37 @@ class DataEntry(QDialog, data.Ui_Form):
         #### BUTTON FUNCTIONS ####
         self.returnToHome.clicked.connect(self.returnHome)
         self.patientList.itemClicked.connect(self.patientSelected)
-        self.patientList.itemClicked.connect(self.populate_view)
-        self.setExams.clicked.connect(self.setPatientExams)
-
-        #### Signal Connections ####
-        self.currentExamSelect.currentIndexChanged.connect(self.updateOptions) #update the baseline exam dropdown menu
+        self.btn_set_baseline.clicked.connect(self.set_patient_baseline)
+        self.btn_reset.clicked.connect(self.reset)
         
     #### Functions ####
-    def setPatientExams(self):
-        '''
-        Changes the exam.baseline and exam.current statuses after user selects Set Exams
-        '''
-        try:
-            getattr(self,'link') #check to see if a patient has been selected
-            self.indexFind = re.compile(r'^\d{1,3}')
-            self.currExamIndex = int(self.indexFind.search(self.currentExamSelect.currentText()).group())
-            self.baseExamIndex = int(self.indexFind.search(self.baselineExamSelect.currentText()).group())
-            self.numExams = len(self.parent().StudyRoot.patients[self.selkey].exams.items())
-        
-            if self.parent().StudyRoot.patients[self.selkey].exams[self.baseExamIndex].containsnoT_NT_NL == True:
-                QMessageBox.warning(self,'Warning!',\
-                    'Selected baseline exam does NOT contain Target lesions!\nDiameter changes relative to baseline will be incorrect.\n\nDifferent baseline selection is advised.')
+    def reset(self):
+        self.temp_patient = self.parent().StudyRoot.patients[self.selkey]
+        self.patientSelected()
+        self.btn_reset.setEnabled(False)
 
-            for self.i in range(1,self.numExams+1):
-                #Note, we use self.parent().StudyRoot so that we modify the StudyRoot that belongs to the main program (whereas self.link in patientSelected would not push changes to the self.parent().StudyRoot)
-                #set current and baseline status to False for every exam (will be set after loop)
-                self.parent().StudyRoot.patients[self.selkey].exams[self.i].add_current(False)
-                self.parent().StudyRoot.patients[self.selkey].exams[self.i].add_baseline(False)
-            
-            self.parent().StudyRoot.patients[self.selkey].exams[self.currExamIndex].add_current(True)
-            self.parent().StudyRoot.patients[self.selkey].exams[self.baseExamIndex].add_baseline(True)
-            
-            self.CurrFound = False
-            self.BaseFound = False
-            for self.i in range(1,self.numExams+1): #set ignore status of exams, exams are before the baseline or after the selected 'current' exam, they should be ignored in best response determination
-                if (self.CurrFound == False and self.BaseFound == False) or (self.CurrFound == True and self.BaseFound == True):
-                    if self.parent().StudyRoot.patients[self.selkey].exams[self.i].current == False and self.parent().StudyRoot.patients[self.selkey].exams[self.i].baseline == False:
-                        self.parent().StudyRoot.patients[self.selkey].exams[self.i].add_ignore(True)
-                
-                #do this later so that the baseline does not incorrectly get marked at ignore == True (occurs because currFound and baseFound == True)
-                if self.parent().StudyRoot.patients[self.selkey].exams[self.i].current == True and \
-                self.parent().StudyRoot.patients[self.selkey].exams[self.i].baseline == False:
-                    self.CurrFound = True #current exam found
-                elif self.parent().StudyRoot.patients[self.selkey].exams[self.i].baseline == True and \
-                self.parent().StudyRoot.patients[self.selkey].exams[self.i].current == False:
-                    self.BaseFound = True #baseline found
+    def set_patient_baseline(self):
+        '''
+        Set all exams prior to baseline to ignore = False
+        '''
+        self.indexFind = re.compile(r'^\d{1,3}')
+        self.baseExamKey = int(self.indexFind.search(self.baselineExamSelect.currentText()).group())
         
-        except Exception as e:
-            print("Error: ",e)
-            traceback.print_exc()
-            QMessageBox.information(self,'Message','Please select a patient.')
+        for key,exam in self.temp_patient.exams.items():
+            exam.add_ignore(False)
+            exam.add_baseline(False)
+
+        self.temp_patient.exams[self.baseExamKey].add_baseline(True) #set baseline
+
+        self.base_found = False
+        for key,exam in self.temp_patient.exams.items():
+            if exam.baseline and self.base_found == False:
+                self.base_found = True
+            elif self.base_found == True:
+                exam.add_ignore(True)
+        
+        self.btn_reset.setEnabled(True)
+        self.populate_view()
 
     def patientSelected(self):
         '''
@@ -108,34 +90,24 @@ class DataEntry(QDialog, data.Ui_Form):
         MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
         self.selkey = MRNSID.search(currPt).group() #selected patient
 
-        self.link = self.parent().StudyRoot.patients[self.selkey].exams.items() #link contains the exams
-        self.exams1 = []
-        for key,exam in self.link:
+        self.temp_patient = copy.deepcopy(self.parent().StudyRoot.patients[self.selkey]) #temp patient for updating values
+
+        self.exams = []
+        for key,exam in self.temp_patient.exams.items():
             self.examList.addItem(str(key) + ': ' + str(exam.modality) + ' - ' + str(exam.date))
-            self.exams1.append(str(key) + ': ' + str(exam.modality) + ' - ' + str(exam.date))
+            self.exams.append(str(key) + ': ' + str(exam.modality) + ' - ' + str(exam.date))
         
-        self.currentExamSelect.clear() #clear before listing, otherwise entries aggregate
-        self.currentExamSelect.addItems(self.exams1)
-        selection1 = self.currentExamSelect.currentText()
+        self.baselineExamSelect.addItems(self.exams) #populate list
+        self.btn_set_baseline.setEnabled(True)
+        self.populate_view()
 
-    def updateOptions(self,index):
-        self.exams2 = self.exams1[index+1:]
-        self.baselineExamSelect.clear()
-        self.baselineExamSelect.addItems(self.exams2) #populate list
-
-        #set default selection to oldest exam, assumed to be baseline
-        count = self.baselineExamSelect.count()
-        self.baselineExamSelect.setCurrentIndex(count-1)
     def returnHome(self):
         self.close()
 
     def populate_view(self):
         currPt = self.patientList.currentItem().text() #current patient string
-        MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
-        self.selkey = MRNSID.search(currPt).group() #selected patient
-
         self.lineedit_patient_name.setText(currPt)
-        self.patient = self.parent().StudyRoot.patients[self.selkey]
+        self.patient = self.temp_patient
 
         if hasattr(self,'patient_tree'):
             self.patient_tree.setParent(None) #drop pointer so multiple don't get added to the tree_container
