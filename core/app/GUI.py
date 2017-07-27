@@ -121,7 +121,7 @@ class DataEntry(QDialog, data.Ui_Form):
         self.patient_tree.itemChanged.connect(self.update_temp_patient_obj)
 
     def update_temp_patient_obj(self,item,col):
-        
+        ### Need to view exam item and then reflect the change in the self.temp_patient
         print(item,col)
 
     def set_patient_params(self):
