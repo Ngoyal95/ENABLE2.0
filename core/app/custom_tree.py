@@ -6,12 +6,14 @@ from PyQt5.QtWidgets import (QWidget, QTreeWidget, QTreeWidgetItem, QApplication
 from PyQt5 import QtCore,QtGui
 import core.app.BLDataClasses as BLDataClasses
 
-class PatientTree(QWidget):
+class PatientTree(QTreeWidget):
+    
+    #item_updated_signal = QtCore.pyqtSignal()
+    
     def __init__(self,pt):
         QWidget.__init__(self)
     
         self.tree = QTreeWidget()
-        #self.root = QTreeWidgetItem(self.tree,[' '.join([pt.name,pt.mrn])])
         self.root = self.tree.invisibleRootItem()
         
         self.headers = [
@@ -33,9 +35,9 @@ class PatientTree(QWidget):
         self.root.setExpanded(True)
 
         self.addItems(self.root,pt)
-                
-        for i in range(0,self.tree.columnCount()):
-            self.tree.resizeColumnToContents(i)
+
+        self.tree.header().setResizeMode(QtGui.QHeaderView.ResizeToContents)
+        self.tree.header().setStretchLastSection(False)
         
         layout = QVBoxLayout()
         layout.addWidget(self.tree)

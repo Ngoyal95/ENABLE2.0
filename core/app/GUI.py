@@ -7,7 +7,6 @@ import core.gui.uploader as uploader #database upload page
 import core.gui.login as login #login page
 import core.gui.config as config
 import core.app.BLDataClasses as BLDataClasses
-from core.app.custom_tree import PatientTree
 from core.app.BLImportFunctions import bl_import
 from core.app.RECISTComp import recist_computer
 from core.app.RECISTGen import generate_recist_sheets
@@ -32,6 +31,7 @@ import copy
 from PyQt5.QtWidgets import (QLineEdit, QProgressBar, QDialog, QTableView, 
                             QFileDialog, QAction, QApplication, QWidget, 
                             QPushButton, QMessageBox, QDesktopWidget, QMainWindow,
+                            QTreeWidget, QTreeWidgetItem
                             )
 from PyQt5 import QtCore, QtGui
 from pprint import pprint
@@ -50,6 +50,7 @@ class DataEntry(QDialog, data.Ui_Form):
         self.returnToHome.clicked.connect(self.returnHome)
         self.patientList.itemClicked.connect(self.patientSelected)
         self.btn_set_baseline.clicked.connect(self.set_patient_baseline)
+        self.btn_set_params.clicked.connect(self.set_patient_params)
         self.btn_reset.clicked.connect(self.reset)
         
     #### Functions ####
@@ -85,7 +86,6 @@ class DataEntry(QDialog, data.Ui_Form):
         '''
         List exams for selected patient
         '''
-        self.examList.clear() #clear when new patient selected
         currPt = self.patientList.currentItem().text() #current patient string
         MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
         self.selkey = MRNSID.search(currPt).group() #selected patient
@@ -94,7 +94,6 @@ class DataEntry(QDialog, data.Ui_Form):
 
         self.exams = []
         for key,exam in self.temp_patient.exams.items():
-            self.examList.addItem(str(key) + ': ' + str(exam.modality) + ' - ' + str(exam.date))
             self.exams.append(str(key) + ': ' + str(exam.modality) + ' - ' + str(exam.date))
         
         self.baselineExamSelect.addItems(self.exams) #populate list
@@ -112,11 +111,85 @@ class DataEntry(QDialog, data.Ui_Form):
         if hasattr(self,'patient_tree'):
             self.patient_tree.setParent(None) #drop pointer so multiple don't get added to the tree_container
             del self.patient_tree
-            self.patient_tree = PatientTree(self.patient)
+            self.patient_tree = self.create_patient_tree()
             self.tree_container.addWidget(self.patient_tree)
         else:
-            self.patient_tree = PatientTree(self.patient)
+            self.patient_tree = self.create_patient_tree()
             self.tree_container.addWidget(self.patient_tree)
+            
+        self.patient_tree.itemChanged.connect(self.update_temp_patient_obj)
+
+    def update_temp_patient_obj(self,signal):
+        print('update')
+
+    def set_patient_params(self):
+        self.parent().StudyRoot.patients[self.selkey] = self.temp_patient
+    
+    def create_patient_tree(self):
+        self.tree = QTreeWidget()
+        self.root = self.tree.invisibleRootItem()
+        
+        self.headers = [
+                        'Exam',
+                        'Follow-Up',
+                        'Name',
+                        'Description',
+                        'Target',
+                        'Sub-Type',
+                        'Series',
+                        'Slice#',
+                        'RECIST Diameter (cm)'
+                        ]
+
+        self.headers_item = QTreeWidgetItem(self.headers)
+
+        self.tree.setColumnCount(len(self.headers))
+        self.tree.setHeaderItem(self.headers_item)
+        self.root.setExpanded(True)
+
+        self.addItems()
+
+        self.tree.header().setResizeMode(QtGui.QHeaderView.ResizeToContents)
+        self.tree.header().setStretchLastSection(False)
+    
+        return self.tree
+
+    def addItems(self):
+        '''
+        Add items to the table from the patient object
+        '''
+        self.temp_patient
+        for key,exam in self.temp_patient.exams.items():
+            column = 0
+            self.exam_item = QTreeWidgetItem(self.root)
+            self.exam_item.setText(column,', '.join([str(exam.date),str(exam.modality),str(exam.description)]))
+            
+            if exam.ignore == False:
+                self.exam_item.setCheckState (column, QtCore.Qt.Checked)
+            else:
+                self.exam_item.setCheckState (column, QtCore.Qt.Unchecked)
+
+            for lesion in exam.lesions:
+                column = 1
+                if lesion.params['Target'].lower() == 'target' or lesion.params['Target'].lower() == 'non-target':
+                    self.param_list = [
+                                        lesion.params['Follow-Up'],
+                                        lesion.params['Name'],
+                                        lesion.params['Description'],
+                                        lesion.params['Target'],
+                                        lesion.params['Sub-Type'],
+                                        lesion.params['Series'],
+                                        lesion.params['Slice#'],
+                                        round(lesion.params['RECIST Diameter (mm)']/10,1)
+                                        ]
+                                        
+                    self.lesion_item = QTreeWidgetItem(self.exam_item)
+                    self.lesion_item.setCheckState(column,QtCore.Qt.Checked)
+                    for param_str in self.param_list:
+                        self.lesion_item.setText(column,str(self.param_list[column-1]))
+                        self.lesion_item.setTextAlignment(column,4) #align center of column
+                        column += 1
+                    self.lesion_item.setFlags(self.lesion_item.flags() | QtCore.Qt.ItemIsEditable)
 
 class MainWindow(QMainWindow, design.Ui_mainWindow):
     
