@@ -4,7 +4,7 @@ Custom tree class to display a patients data for editing
 import sys
 from PyQt5.QtWidgets import (QWidget, QTreeWidget, QTreeWidgetItem, QApplication, QVBoxLayout)
 from PyQt5 import QtCore,QtGui
-import BLDataClasses
+import core.app.BLDataClasses as BLDataClasses
 
 class PatientTree(QWidget):
     def __init__(self,pt):

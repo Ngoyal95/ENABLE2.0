@@ -1,30 +1,20 @@
 #! python3
-
 #Revision 7/26/17
-from PyQt5.QtWidgets import (QLineEdit, QProgressBar, QDialog, QTableView, 
-                            QFileDialog, QAction, QApplication, QWidget, 
-                            QPushButton, QMessageBox, QDesktopWidget, QMainWindow,
-                            )
-from PyQt5 import QtCore, QtGui
+#Custom packages
+import core.gui.design as design # This file holds our MainWindow and all design related things
+import core.gui.data as data #file holds data entry page
+import core.gui.uploader as uploader #database upload page
+import core.gui.login as login #login page
+import core.gui.config as config
+import core.app.BLDataClasses as BLDataClasses
+from core.app.custom_tree import PatientTree
+from core.app.BLImportFunctions import bl_import
+from core.app.RECISTComp import recist_computer
+from core.app.RECISTGen import generate_recist_sheets
+from core.app.DataExport import exportToExcel, waterfallPlot, spiderPlot, exportPlotData, exportToLog
+from core.app.backend_interface import patient_uploader_func, pull_patient_list_from_mongodb, pull_patients_from_mongodb
 
-
-#Dialog templates
-import design # This file holds our MainWindow and all design related things
-import data #file holds data entry page
-import uploader #database upload page
-import login #login page
-import config
-
-#Custom widgets
-from custom_tree import PatientTree
-
-from BLImportFunctions import bl_import
-from RECISTComp import recist_computer
 import pandas as pd
-from RECISTGen import generate_recist_sheets
-from DataExport import exportToExcel, waterfallPlot, spiderPlot, exportPlotData, exportToLog
-from backend_interface import patient_uploader_func, pull_patient_list_from_mongodb, pull_patients_from_mongodb
-import BLDataClasses
 import shelve
 import sys
 import os
@@ -38,15 +28,20 @@ import hashlib
 import pymongo
 import time
 import yaml
+from PyQt5.QtWidgets import (QLineEdit, QProgressBar, QDialog, QTableView, 
+                            QFileDialog, QAction, QApplication, QWidget, 
+                            QPushButton, QMessageBox, QDesktopWidget, QMainWindow,
+                            )
+from PyQt5 import QtCore, QtGui
 from pprint import pprint
 
 class DataEntry(QDialog, data.Ui_Form):
-    def __init__(self, parent=None):
-        QMainWindow.__init__(self)
+    def __init__(self, parent):
+        super(DataEntry,self).__init__(parent)
         self.setupUi(self) #setup the selection window
 
         #### Initialize ####
-        for key,patient in form.StudyRoot.patients.items(): #note, StudyRoot belongs to form (main application window)
+        for key,patient in self.parent().StudyRoot.patients.items(): #note, StudyRoot belongs to form (main application window)
             if patient.ignore == False:
                 self.patientList.addItem(patient.name + ' - ' + key)
         
@@ -69,34 +64,34 @@ class DataEntry(QDialog, data.Ui_Form):
             self.indexFind = re.compile(r'^\d{1,3}')
             self.currExamIndex = int(self.indexFind.search(self.currentExamSelect.currentText()).group())
             self.baseExamIndex = int(self.indexFind.search(self.baselineExamSelect.currentText()).group())
-            self.numExams = len(form.StudyRoot.patients[self.selkey].exams.items())
+            self.numExams = len(self.parent().StudyRoot.patients[self.selkey].exams.items())
         
-            if form.StudyRoot.patients[self.selkey].exams[self.baseExamIndex].containsnoT_NT_NL == True:
+            if self.parent().StudyRoot.patients[self.selkey].exams[self.baseExamIndex].containsnoT_NT_NL == True:
                 QMessageBox.warning(self,'Warning!',\
                     'Selected baseline exam does NOT contain Target lesions!\nDiameter changes relative to baseline will be incorrect.\n\nDifferent baseline selection is advised.')
 
             for self.i in range(1,self.numExams+1):
-                #Note, we use form.StudyRoot so that we modify the StudyRoot that belongs to the main program (whereas self.link in patientSelected would not push changes to the form.StudyRoot)
+                #Note, we use self.parent().StudyRoot so that we modify the StudyRoot that belongs to the main program (whereas self.link in patientSelected would not push changes to the self.parent().StudyRoot)
                 #set current and baseline status to False for every exam (will be set after loop)
-                form.StudyRoot.patients[self.selkey].exams[self.i].add_current(False)
-                form.StudyRoot.patients[self.selkey].exams[self.i].add_baseline(False)
+                self.parent().StudyRoot.patients[self.selkey].exams[self.i].add_current(False)
+                self.parent().StudyRoot.patients[self.selkey].exams[self.i].add_baseline(False)
             
-            form.StudyRoot.patients[self.selkey].exams[self.currExamIndex].add_current(True)
-            form.StudyRoot.patients[self.selkey].exams[self.baseExamIndex].add_baseline(True)
+            self.parent().StudyRoot.patients[self.selkey].exams[self.currExamIndex].add_current(True)
+            self.parent().StudyRoot.patients[self.selkey].exams[self.baseExamIndex].add_baseline(True)
             
             self.CurrFound = False
             self.BaseFound = False
             for self.i in range(1,self.numExams+1): #set ignore status of exams, exams are before the baseline or after the selected 'current' exam, they should be ignored in best response determination
                 if (self.CurrFound == False and self.BaseFound == False) or (self.CurrFound == True and self.BaseFound == True):
-                    if form.StudyRoot.patients[self.selkey].exams[self.i].current == False and form.StudyRoot.patients[self.selkey].exams[self.i].baseline == False:
-                        form.StudyRoot.patients[self.selkey].exams[self.i].add_ignore(True)
+                    if self.parent().StudyRoot.patients[self.selkey].exams[self.i].current == False and self.parent().StudyRoot.patients[self.selkey].exams[self.i].baseline == False:
+                        self.parent().StudyRoot.patients[self.selkey].exams[self.i].add_ignore(True)
                 
                 #do this later so that the baseline does not incorrectly get marked at ignore == True (occurs because currFound and baseFound == True)
-                if form.StudyRoot.patients[self.selkey].exams[self.i].current == True and \
-                form.StudyRoot.patients[self.selkey].exams[self.i].baseline == False:
+                if self.parent().StudyRoot.patients[self.selkey].exams[self.i].current == True and \
+                self.parent().StudyRoot.patients[self.selkey].exams[self.i].baseline == False:
                     self.CurrFound = True #current exam found
-                elif form.StudyRoot.patients[self.selkey].exams[self.i].baseline == True and \
-                form.StudyRoot.patients[self.selkey].exams[self.i].current == False:
+                elif self.parent().StudyRoot.patients[self.selkey].exams[self.i].baseline == True and \
+                self.parent().StudyRoot.patients[self.selkey].exams[self.i].current == False:
                     self.BaseFound = True #baseline found
         
         except Exception as e:
@@ -113,7 +108,7 @@ class DataEntry(QDialog, data.Ui_Form):
         MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
         self.selkey = MRNSID.search(currPt).group() #selected patient
 
-        self.link = form.StudyRoot.patients[self.selkey].exams.items() #link contains the exams
+        self.link = self.parent().StudyRoot.patients[self.selkey].exams.items() #link contains the exams
         self.exams1 = []
         for key,exam in self.link:
             self.examList.addItem(str(key) + ': ' + str(exam.modality) + ' - ' + str(exam.date))
@@ -140,7 +135,7 @@ class DataEntry(QDialog, data.Ui_Form):
         self.selkey = MRNSID.search(currPt).group() #selected patient
 
         self.lineedit_patient_name.setText(currPt)
-        self.patient = form.StudyRoot.patients[self.selkey]
+        self.patient = self.parent().StudyRoot.patients[self.selkey]
 
         if hasattr(self,'patient_tree'):
             self.patient_tree.setParent(None) #drop pointer so multiple don't get added to the tree_container
@@ -156,9 +151,10 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
     recist_calc_signal = QtCore.pyqtSignal(bool) #indicate if FetchRoot should be used (if False), or StudyRoot (if True)
     recist_sheets_signal = QtCore.pyqtSignal(bool) #indicate if FetchRoot should be used (if False), or StudyRoot (if True)
 
-    def __init__(self):
+    def __init__(self,parent=None):
         # super use here because it allows us to access variables, methods etc in the design.py file
-        super(MainWindow, self).__init__()
+        
+        super(MainWindow, self).__init__(parent)
         self.setupUi(self)  # This is defined in design.py file automatically. It sets up layout and widgets that are defined     
 
         #### Login Window ####
@@ -337,7 +333,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             currPt = temp.text() #current patient string
             MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
             selkey = MRNSID.search(currPt).group() #selected patient
-            form.StudyRoot.patients[selkey].add_ignore(True) #mark patient for ignore
+            self.parent().StudyRoot.patients[selkey].add_ignore(True) #mark patient for ignore
         except AttributeError:
             QMessageBox.information(self,'Message','No patient selected for removal.')
 
@@ -350,7 +346,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             currPt = temp.text() #current patient string
             MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
             selkey = MRNSID.search(currPt).group() #selected patient
-            form.StudyRoot.patients[selkey].add_ignore(False) #mark patient for ignore
+            self.parent().StudyRoot.patients[selkey].add_ignore(False) #mark patient for ignore
         except Exception as e:
             print("Error: ",e)
             traceback.print_exc()
@@ -388,7 +384,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             self.config()
 
     def config(self):
-        self.config_page = ConfigurationPage()
+        self.config_page = ConfigurationPage(self)
         self.config_page.exec()
         self.settings()
 
@@ -453,20 +449,19 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         #launch exam selection dialog if the StudyRoot exists (BLs have been imported)
         try:
             getattr(self,'StudyRoot')
-            self.dataoverride = DataEntry()
+            self.dataoverride = DataEntry(self)
             self.dataoverride.exec()
         except Exception as e:
             print(e)
             traceback.print_exc()
             QMessageBox.information(self,'Message','Please Import Bookmark List(s).')
 
-
     def launchDbUploadDialog(self):
         try:
             self.StudyRoot #check if patients imported
             try:
                 if self.Calcs == True: #check if calcs performed
-                    self.uploaddialog = DatabaseUploadDialog()
+                    self.uploaddialog = DatabaseUploadDialog(self)
                     self.uploaddialog.exec()
                 elif self.Calcs == False:
                     QMessageBox.information(self,'Message','Please perform RECIST calculations.')
@@ -481,9 +476,6 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
 
     #### Clinical Tab Functions ####   
     def import_patients_from_db(self):
-        # if self.FetchRoot is None:
-        #     self.FetchRoot = BLDataClasses.StudyRoot()
-        
         try:
             self.FetchRoot
         except Exception as e:
@@ -553,7 +545,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
 
     def importBookmarks(self):
         if hasattr(self,'StudyRoot') == False:
-            form.StudyRoot = BLDataClasses.StudyRoot()
+            self.parent().StudyRoot = BLDataClasses.StudyRoot()
         
         self.statusbar.showMessage('Importing Bookmark List(s)...')
         self.patientList.clear()
@@ -611,8 +603,8 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.statusbar.showMessage('Done generating RECIST worksheets.', 1000)
 
 class DatabaseUploadDialog(QDialog, uploader.Ui_databaseuploaddialog):
-    def __init__(self, parent=None):
-        QMainWindow.__init__(self)
+    def __init__(self, parent):
+        super(DatabaseUploadDialog,self).__init__(parent)
         self.setupUi(self) #setup the graphing window
         
 class ENABLELoginWindow(QDialog, login.Ui_logindialog):
@@ -623,20 +615,22 @@ class ENABLELoginWindow(QDialog, login.Ui_logindialog):
     closeSignal = QtCore.pyqtSignal(bool) #indicate that user closed login - close entire application
     offlineSignal = QtCore.pyqtSignal(bool) #launch offline mode with limited features
 
-    def __init__(self, parent = None):
-        QDialog.__init__(self)
+    def __init__(self, parent):
+        super(ENABLELoginWindow,self).__init__(parent)
         self.setupUi(self) #setup the graphing window
 
         self.pixmax = QtGui.QPixmap('../icons/enable_icon.png')
         self.ENABLE_logo.setPixmap(self.pixmax)
         self.ENABLE_logo.show()
         self.setWindowIcon(QtGui.QIcon('../icons/enable_icon.png'))
-        self.show()
+        
 
         self.btn_log_in.clicked.connect(self.run_login)
         self.btn_offline_mode.clicked.connect(self.run_offline_mode)
         self.count = 0
 
+        self.show()
+        
     def run_login(self):
         self.actual_name = win32api.GetUserNameEx(3) #actual name of the user
         #self.user_info = win32net.NetUserGetInfo (win32net.NetGetAnyDCName (), win32api.GetUserName (), 1) #returns dict, use field 'home_dir' to find 'nih.gov'
@@ -672,7 +666,7 @@ class ENABLELoginWindow(QDialog, login.Ui_logindialog):
 
 class ConfigurationPage(QDialog, config.Ui_configuration):
     def __init__(self, parent=None):
-        QMainWindow.__init__(self)
+        super(ConfigurationPage,self).__init__(parent)
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon('../icons/configIcon.png'))     
 
@@ -759,7 +753,8 @@ def kill_proc_tree(pid, including_parent=True):
         child.kill()
     if including_parent:
         parent.kill()
-if __name__ == '__main__':
+
+def runner():
     myappid = u'ENABLE 2.0_V1'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
@@ -773,3 +768,4 @@ if __name__ == '__main__':
 
     me = os.getpid()
     kill_proc_tree(me)
+

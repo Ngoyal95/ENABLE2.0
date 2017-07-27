@@ -3,11 +3,12 @@
 Functions related to JSON serialization, uploading to database backend, and pulling from database backend
 '''
 #7/18/17
+import core.app.BLDataClasses as BLDataClasses
+
 import time
 import json
 import copy
 import datetime
-import BLDataClasses
 import traceback
 from bson import json_util
 from pprint import pprint

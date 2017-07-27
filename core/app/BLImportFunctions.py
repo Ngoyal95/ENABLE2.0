@@ -2,7 +2,7 @@
 #Revision 7/7/17
 import os
 import pandas as pd
-import BLDataClasses
+import core.app.BLDataClasses as BLDataClasses
 import re
 import xlrd
 from pprint import pprint
