@@ -217,9 +217,11 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
         self.combobox_patient_search.setCompleter(self.completer)
         self.btn_add_patient_to_load.clicked.connect(self.add_patient_selected)
+        self.list_available_patients.itemClicked.connect(self.update_combobox_lineedit) #if patient in list is clicked, update search_lineedit
+        self.search_lineedit.setClearButtonEnabled(True)
         self.btn_dont_load_selected_patient.clicked.connect(self.dont_load_selected_patient)
         self.btn_unload_all_patients.clicked.connect(self.unload_all_patients)
-
+        
     #### Signal Functions ####
     def recist_cal_with_fetchroot(self):
         self.recist_calc_signal.emit(False) #recist calc with FetchRoot
@@ -451,7 +453,10 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.btn_unload_all_patients.setEnabled(True)
 
     def add_patient_selected(self):
-        if not self.list_patients_to_load.findItems(str(self.combobox_patient_search.currentText()), QtCore.Qt.MatchFixedString):
+        if  (    not self.list_patients_to_load.findItems(str(self.combobox_patient_search.currentText()), QtCore.Qt.MatchFixedString) and 
+                re.search('[a-zA-Z]+',self.combobox_patient_search.currentText()) != None
+            ): 
+                #if patient not already in load list, add
             self.list_patients_to_load.addItem(str(self.combobox_patient_search.currentText()))
         self.search_lineedit.clear()
 
@@ -470,7 +475,10 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             print(e)
             traceback.print_exc()
             QMessageBox.information(self,'Message','No patient selected for removal.')
-
+    def update_combobox_lineedit(self,signal):
+        self.combobox_patient_search.setCurrentText(signal.text())
+    def clear_combobox_lineedit(self):
+        self.search_lineedit.clear()
     #### Shared Computational/Operation Functions ####
     def recistCalculations(self,signal):
         #perform recist calculations by passing each patient in self.root_to_use to the recist_computer() function
