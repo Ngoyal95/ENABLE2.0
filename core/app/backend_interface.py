@@ -109,7 +109,9 @@ def pull_patients_from_mongodb(FetchRoot,fetch_list):
     client = MongoClient()
     db = client.test
     for pt in fetch_list:
-        fetched.append(db.patients.find_one({"name":pt.split(' - ',1)[0]})) #Need to pass only names (ex. "Smith, John Bob")
+        cursor = db.patients.find({"name":pt.split(' - ',1)[0]})
+        cursor.sort("upload_timestamp_utc",-1) #sort, most recently entered exam come first
+        fetched.append(cursor[0]) #append JSON obj for most recent entry for this patient
     map_mongo_dict_to_ptobj(FetchRoot,fetched)
     client.close()
 

@@ -42,10 +42,9 @@ class MyDelegate(QItemDelegate):
     (the exam description, lesion follow-up, and lesion name)
     '''
     def createEditor(self, parent, option, index):
-        if index.column() not in {0,1,2}:
+        if index.column() not in {0,1,3,4}:
             return super(MyDelegate,self).createEditor(parent,option,index)
         return None
-
 class DataEntry(QDialog, data.Ui_Form):
     def __init__(self, parent):
         super(DataEntry,self).__init__(parent)
@@ -55,19 +54,47 @@ class DataEntry(QDialog, data.Ui_Form):
             if patient.ignore == False:
                 self.patientList.addItem(patient.name + ' - ' + key)
         
+        self.temp_root = copy.deepcopy(self.parent().StudyRoot)
+
         self.btn_set_params.setEnabled(False)
+        self.btn_deep_reset.setEnabled(False)
+        self.btn_reset.setEnabled(False)
         self.delegate = MyDelegate()
 
         self.returnToHome.clicked.connect(self.returnHome)
         self.patientList.itemClicked.connect(self.patientSelected)
         self.btn_set_baseline.clicked.connect(self.set_patient_baseline)
         self.btn_set_params.clicked.connect(self.set_patient_params)
+       
+        self.btn_deep_reset.clicked.connect(self.deep_reset)
         self.btn_reset.clicked.connect(self.reset)
 
+    def deep_reset(self):
+        '''
+        Reset patient data to the state contained in OriginalRoot
+        '''
+        reply = QMessageBox.warning(self,'Warning!','Deep Rest will remove ALL changes which have been made to patient data and revert to Bookmark List values.',
+            QMessageBox.StandardButtons(QMessageBox.Yes|QMessageBox.Cancel))
+        
+        if reply == QMessageBox.Yes:
+            self.temp_patient = copy.deepcopy(self.parent().OriginalRoot.patients[self.selkey])
+            self.parent().StudyRoot.patients[self.selkey] = copy.deepcopy(self.parent().OriginalRoot.patients[self.selkey])
+            self.populate_view()
+            self.btn_reset.setEnabled(False)
+        pass
+
     def reset(self):
-        self.temp_patient = self.parent().StudyRoot.patients[self.selkey]
-        self.patientSelected()
-        self.btn_reset.setEnabled(False)
+        '''
+        Reset state to StudyRoot values prior to edits (ONLY FUNCTIONS BEFORE commiting changes from self.tenp_patient to the StudyRoot, using the btn_set_params)
+        '''
+        #NOT a deep reset to the object stored in the OriginalRoot, just to StudyRoot state.
+        reply = QMessageBox.warning(self,'Warning!','Reset will remove ALL recent changes to patient data.',
+            QMessageBox.StandardButtons(QMessageBox.Yes|QMessageBox.Cancel))
+        
+        if reply == QMessageBox.Yes:
+            self.temp_patient = copy.deepcopy(self.parent().StudyRoot.patients[self.selkey])
+            self.populate_view()
+            self.btn_reset.setEnabled(False)
 
     def set_patient_baseline(self):
         '''
@@ -88,6 +115,7 @@ class DataEntry(QDialog, data.Ui_Form):
             elif self.base_found == True:
                 exam.add_ignore(True)
         
+        self.btn_set_params.setEnabled(True)
         self.btn_reset.setEnabled(True)
         self.populate_view()
 
@@ -96,11 +124,14 @@ class DataEntry(QDialog, data.Ui_Form):
         List exams for selected patient
         '''
         self.btn_set_params.setEnabled(False)
+        self.btn_deep_reset.setEnabled(True)
+        self.btn_reset.setEnabled(True)
+
         currPt = self.patientList.currentItem().text() #current patient string
         MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
         self.selkey = MRNSID.search(currPt).group() #selected patient
 
-        self.temp_patient = copy.deepcopy(self.parent().StudyRoot.patients[self.selkey]) #temp patient for updating values
+        self.temp_patient = self.temp_root.patients[self.selkey] #temp patient for updating values
 
         self.exams = []
         for key,exam in self.temp_patient.exams.items():
@@ -113,8 +144,18 @@ class DataEntry(QDialog, data.Ui_Form):
         self.populate_view()
 
     def returnHome(self):
-        self.set_patient_params()
-        self.close()
+        if hasattr(self,'temp_patient'):
+            reply = QMessageBox.question(self,'Commit?','Would you like to save all unsaved changes (if any)?',QMessageBox.StandardButtons(QMessageBox.Yes|QMessageBox.No|QMessageBox.Cancel))
+            if reply == QMessageBox.Yes:
+                self.set_patient_params()
+                self.close()
+            elif reply == QMessageBox.Cancel:
+                pass
+            else:
+                self.close()
+        else:
+            #no pt selected
+            self.close()
 
     def populate_view(self):
         currPt = self.patientList.currentItem().text() #current patient string
@@ -134,6 +175,7 @@ class DataEntry(QDialog, data.Ui_Form):
 
     def update_temp_patient_obj(self,item,col):
         self.btn_set_params.setEnabled(True)
+
         ### Need to view exam item and then reflect the change in the self.temp_patient
         self.headers = [
                         'Exam',
@@ -157,11 +199,14 @@ class DataEntry(QDialog, data.Ui_Form):
             self.parent_exam_date = item.parent().text(0).split(',')[0]
             self.exam = next((x for key,x in self.temp_patient.exams.items() if x.date == self.parent_exam_date), None)
             self.lesion = next((x for x in self.exam.lesions if x.params['Name'] == self.lesion_name), None) #find lesion obj w/ matching name
+        
             if col == 2:
                 #lesion included/excluded
                 #included by default
                 if not item.checkState(col) == QtCore.Qt.Checked:
                     self.lesion.add_include(False) #exclude
+                else:
+                    self.lesion.add_include(True) #include)
             else:
                 self.lesion.params[self.headers[col]] = self.data_in_item_col
         else:
@@ -223,7 +268,7 @@ class DataEntry(QDialog, data.Ui_Form):
             elif not(exam.ignore == False and exam.baseline == True):
                 self.exam_item.setText(column+1,'No')
                 self.exam_item.setCheckState (column, QtCore.Qt.Unchecked)
-                self.exam_item.setDisabled(True) #don't allow user to interact with item if these exams are to be ignored (prevents them from checking the box)
+                #self.exam_item.setDisabled(True) #don't allow user to interact with item if these exams are to be ignored (prevents them from checking the box)
             else:
                 self.exam_item.setText(column+1,'Yes')
 
@@ -249,6 +294,7 @@ class DataEntry(QDialog, data.Ui_Form):
                         column += 1
                     self.lesion_item.setFlags(self.lesion_item.flags() | QtCore.Qt.ItemIsEditable)
 
+
 class MainWindow(QMainWindow, design.Ui_mainWindow):
     
     recist_calc_signal = QtCore.pyqtSignal(bool) #indicate if FetchRoot should be used (if False), or StudyRoot (if True)
@@ -270,6 +316,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.settings() #load user settings
         self.setWindowIcon(QtGui.QIcon('icons/enable_icon.png'))
         self.consultDate.setDate(QtCore.QDate.currentDate())
+        self.OriginalRoot = BLDataClasses.StudyRoot() #used to store original data imported, NOT edited and not used in program (unless for reset purposes)
         self.StudyRoot = BLDataClasses.StudyRoot() #stores imported Bookmark List data
         self.FetchRoot = BLDataClasses.StudyRoot() #stores data pulled from ENABLE database
 
@@ -418,6 +465,7 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             self.patientList.clear()
             self.excludeList.clear()
             del self.StudyRoot #delete the study root
+            del self.OriginalRoot
             self.btn_consult_recist_calcs.setEnabled(False)
             self.btn_consult_generate_recist.setEnabled(False)
             self.databaseUploader.setEnabled(False)
@@ -608,8 +656,9 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             self.Calcs = False
 
     def importBookmarks(self):
-        if hasattr(self,'StudyRoot') == False:
-            self.parent().StudyRoot = BLDataClasses.StudyRoot()
+        if hasattr(self,'OriginalRoot') == False:
+            self.OriginalRoot = BLDataClasses.StudyRoot()
+            self.StudyRoot = BLDataClasses.StudyRoot()
         
         self.statusbar.showMessage('Importing Bookmark List(s)...')
         self.patientList.clear()
@@ -634,9 +683,9 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             flag = 1 #no imports
 
         if flag == 0:
-            bl_import(self.df,self.StudyRoot,self.dirName,self.baseNames) #import patients
+            bl_import(self.df,self.OriginalRoot,self.dirName,self.baseNames) #import patients
             
-            for key,patient in self.StudyRoot.patients.items():
+            for key,patient in self.OriginalRoot.patients.items():
                 self.patientList.addItem(patient.name + ' - ' + key)
             
             self.modExamDates.setEnabled(True)
@@ -647,6 +696,8 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             self.statusbar.showMessage('No Bookmark List(s) imported.',1000)
             del self.StudyRoot
             self.statusbar.clearMessage()
+
+        self.StudyRoot = copy.deepcopy(self.OriginalRoot) #use a copy for all further computations and operations
 
     def genRECIST(self,signal):
         if signal == True:
@@ -831,3 +882,286 @@ def runner():
     me = os.getpid()
     kill_proc_tree(me)
 
+# class DataEntry(QDialog, data.Ui_Form):
+#     def __init__(self, parent):
+#         super(DataEntry,self).__init__(parent)
+#         self.setupUi(self) #setup the selection window
+
+#         for key,patient in self.parent().StudyRoot.patients.items(): #note, StudyRoot belongs to form (main application window)
+#             if patient.ignore == False:
+#                 self.patientList.addItem(patient.name + ' - ' + key)
+        
+#         self.history = {}
+#         # format is {    'mrn/study_protocol':[ {change index: []}, [change_indices], # ]     }, where the change_index value ==> [item,column,prev. value,curr. val] 
+#         # #and # = the offset in the change_indices from the most recent entry
+#         #track revision history using the change_indices, which is a list [0,1,2,....], where each number is used to access the revision information in the nested dict
+        
+#         self.btn_set_params.setEnabled(False)
+#         self.btn_deep_reset.setEnabled(False)
+#         self.btn_reset.setEnabled(False)
+#         self.delegate = MyDelegate()
+
+#         self.returnToHome.clicked.connect(self.returnHome)
+#         self.patientList.itemClicked.connect(self.patientSelected)
+#         self.btn_set_baseline.clicked.connect(self.set_patient_baseline)
+#         self.btn_set_params.clicked.connect(self.set_patient_params)
+
+#         self.btn_undo.clicked.connect(self.undo)
+#         # self.btn_redo.clicked.connect(self.redo)
+        
+#         self.btn_deep_reset.clicked.connect(self.deep_reset)
+#         self.btn_reset.clicked.connect(self.reset)
+
+#     def undo(self):
+#         self.key = self.temp_patient.mrn + '/' + self.temp_patient.study_protocol
+#         self.indiv_patient = self.history[self.key]
+#         self.indiv_patient_change_indices = self.indiv_patient[1]
+#         self.distance_from_current_state = self.indiv_patient[2] # [ [vals], [change_indices], x ], x is where we are
+#         self.indiv_patient_data_list = self.indiv_patient[0]
+#         self.length_change_indices_list = len(self.indiv_patient_change_indices)
+
+#         if self.length_change_indices_list > 1 and self.distance_from_current_state < self.length_change_indices_list:
+#             self.indiv_patient[2] = self.distance_from_current_state - 1 #decrement since we move backward
+#             self.current_state = self.indiv_patient_data_list[self.length_change_indices_list-1+self.distance_from_current_state] #access current state from the dict via the computed key
+#             self.current_item = self.current_state[0]
+#             self.change_col = self.current_state[1]
+#             self.past_item_state = self.current_state[2]
+
+#             if self.change_col in {0,2}: 
+#                 #checkbox
+#                 self.current_item.setCheckState(self.change_col,self.past_item_state)
+#             else:
+#                 self.current_item.setText(self.change_col,self.past_item_state)
+        
+#         else:
+#             #nothing to move to on prior
+#             pass
+    
+#     def redo(self):
+#         pass
+
+#     def deep_reset(self):
+#         '''
+#         Reset patient data to the state contained in OriginalRoot
+#         '''
+#         pass
+
+#     def reset(self):
+#         '''
+#         Reset state to StudyRoot values prior to edits (ONLY FUNCTIONS BEFORE commiting changes from self.tenp_patient to the StudyRoot, using the btn_set_params)
+#         '''
+#         #NOT a deep reset to the object stored in the OriginalRoot, just to StudyRoot state.
+#         QMessageBox.warning(self,'Warning!','Reset will remove ALL changes which have been made to patient data.')
+#         self.temp_patient = self.parent().StudyRoot.patients[self.selkey]
+#         self.patientSelected()
+#         self.btn_reset.setEnabled(False)
+
+#     def set_patient_baseline(self):
+#         '''
+#         Set all exams prior to baseline to ignore = False
+#         '''
+#         self.baseline_key = self.baselineExamSelect.currentIndex() + 1
+
+#         for key,exam in self.temp_patient.exams.items():
+#             exam.add_ignore(False)
+#             exam.add_baseline(False)
+
+#         self.temp_patient.exams[self.baseline_key].add_baseline(True) #set baseline
+
+#         self.base_found = False
+#         for key,exam in self.temp_patient.exams.items():
+#             if exam.baseline and self.base_found == False:
+#                 self.base_found = True
+#             elif self.base_found == True:
+#                 exam.add_ignore(True)
+        
+#         self.btn_reset.setEnabled(True)
+#         self.populate_view()
+
+#     def patientSelected(self):
+#         '''
+#         List exams for selected patient
+#         '''
+#         self.btn_set_params.setEnabled(False)
+#         self.btn_deep_reset.setEnabled(True)
+#         self.btn_reset.setEnabled(True)
+
+#         currPt = self.patientList.currentItem().text() #current patient string
+#         MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
+#         self.selkey = MRNSID.search(currPt).group() #selected patient
+
+#         self.temp_patient = copy.deepcopy(self.parent().StudyRoot.patients[self.selkey]) #temp patient for updating values
+
+#         self.exams = []
+#         for key,exam in self.temp_patient.exams.items():
+#             self.exams.append(str(key) + ': ' + str(exam.modality) + ' - ' + str(exam.date))
+        
+#         self.baselineExamSelect.clear()
+#         self.baselineExamSelect.addItems(self.exams) #populate list
+#         self.baselineExamSelect.setCurrentIndex(self.baselineExamSelect.count()-1) #display the oldest exam
+#         self.btn_set_baseline.setEnabled(True)
+#         self.populate_view()
+
+#         self.pt_hist = [{0:[]},[0],0]
+#         self.history[self.selkey] = self.pt_hist
+
+#     def returnHome(self):
+#         if hasattr(self,'temp_patient'):
+#             reply = QMessageBox.question(self,'Commit?','Would you like to save all unsaved changes (if any)?',QMessageBox.StandardButtons(QMessageBox.Yes|QMessageBox.No|QMessageBox.Cancel))
+#             if reply == QMessageBox.Yes:
+#                 self.set_patient_params()
+#                 self.close()
+#             elif reply == QMessageBox.Cancel:
+#                 pass
+#             else:
+#                 self.close()
+#         else:
+#             #no pt selected
+#             self.close()
+
+#     def populate_view(self):
+#         currPt = self.patientList.currentItem().text() #current patient string
+#         self.lineedit_patient_name.setText(currPt)
+#         self.patient = self.temp_patient
+
+#         if hasattr(self,'patient_tree'):
+#             self.patient_tree.setParent(None) #drop pointer so multiple don't get added to the tree_container
+#             del self.patient_tree
+#             self.patient_tree = self.create_patient_tree()
+#             self.tree_container.addWidget(self.patient_tree)
+#         else:
+#             self.patient_tree = self.create_patient_tree()
+#             self.tree_container.addWidget(self.patient_tree)
+#         self.patient_tree.itemChanged.connect(self.update_temp_patient_obj)
+#         self.patient_tree.setItemDelegate(self.delegate) #custom delegate to prevent editing the first 3 columns
+
+#     def update_temp_patient_obj(self,item,col):
+#         self.btn_set_params.setEnabled(True)
+
+#         ### Need to view exam item and then reflect the change in the self.temp_patient
+#         self.headers = [
+#                         'Exam',
+#                         'Baseline',
+#                         'Inc.',
+#                         'Follow-Up',
+#                         'Name',
+#                         'Description',
+#                         'Target',
+#                         'Sub-Type',
+#                         'Series',
+#                         'Slice#',
+#                         'RECIST Diameter (mm)'
+#                         ]
+#         #col in the self.headers list -> use to access properties for update
+#         self.data_in_item_col = item.text(col)
+#         self.lesion_name = item.text(4)
+
+#         if item.parent() is not None:
+#             #lesion_item
+#             self.parent_exam_date = item.parent().text(0).split(',')[0]
+#             self.exam = next((x for key,x in self.temp_patient.exams.items() if x.date == self.parent_exam_date), None)
+#             self.lesion = next((x for x in self.exam.lesions if x.params['Name'] == self.lesion_name), None) #find lesion obj w/ matching name
+        
+#             if col == 2:
+#                 #lesion included/excluded
+#                 #included by default
+#                 if not item.checkState(col) == QtCore.Qt.Checked:
+#                     self.pt_hist[0][self.pt_hist[1][-1]+1] = [item,col,QtCore.Qt.Checked,QtCore.Qt.Unchecked]
+#                     self.lesion.add_include(False) #exclude
+#                 else:
+#                     self.pt_hist[0][self.pt_hist[1][-1]+1] = [item,col,QtCore.Qt.Unchecked,QtCore.Qt.Checked]
+#                     self.lesion.add_include(True) #include)
+#             else:
+#                 self.pt_hist[0][self.pt_hist[1][-1]+1] = [item,col,self.lesion.params[self.headers[col]],self.data_in_item_col]
+#                 self.lesion.params[self.headers[col]] = self.data_in_item_col
+#         else:
+#             #exam_item
+#             self.exam_date = item.text(0).split(',')[0]
+#             self.exam = next((x for key,x in self.temp_patient.exams.items() if x.date == self.exam_date), None)
+#             if item.checkState(col) == QtCore.Qt.Checked:
+#                 self.exam.add_ignore(False)
+#                 self.pt_hist[0][self.pt_hist[1][-1]+1] = [item,col,QtCore.Qt.Unchecked,QtCore.Qt.Checked]
+#             else:
+#                 self.exam.add_ignore(True)
+#                 self.pt_hist[0][self.pt_hist[1][-1]+1] = [item,col,QtCore.Qt.Checked,QtCore.Qt.Unchecked]
+
+#         self.pt_hist[1].append(self.pt_hist[1][-1]+1)
+#         self.history[self.temp_patient.mrn + '/' + self.temp_patient.study_protocol] = self.pt_hist #update history for this patient
+        
+#         pprint(self.pt_hist[0])
+
+#     def set_patient_params(self):
+#         self.temp_patient.course = str(self.pt_course.value())
+#         self.temp_patient.day = str(self.pt_day.value())
+#         self.parent().StudyRoot.patients[self.selkey] = self.temp_patient
+    
+#     def create_patient_tree(self):
+#         '''
+#         Create QTreeWidget populated with a patient's data for the DataEntry dialog.
+#         Assumes that self.temp_patient is the patient of interest and that the variable belongs to the dialog.
+#         '''
+#         self.tree = QTreeWidget()
+#         self.root = self.tree.invisibleRootItem()
+#         self.headers = [
+#                         'Exam',
+#                         'Baseline',
+#                         'Inc.',
+#                         'Follow-Up',
+#                         'Name',
+#                         'Description',
+#                         'Target',
+#                         'Sub-Type',
+#                         'Series',
+#                         'Slice#',
+#                         'RECIST Diameter (cm)'
+#                         ]
+#         self.headers_item = QTreeWidgetItem(self.headers)
+#         self.tree.setColumnCount(len(self.headers))
+#         self.tree.setHeaderItem(self.headers_item)
+#         self.root.setExpanded(True)
+#         self.addItems()
+#         self.tree.header().setResizeMode(QtGui.QHeaderView.ResizeToContents)
+#         self.tree.header().setStretchLastSection(False)
+#         return self.tree
+
+#     def addItems(self):
+#         '''
+#         Add items to the table from the patient object
+#         '''
+#         self.temp_patient
+#         for key,exam in self.temp_patient.exams.items():
+#             column = 0
+#             self.exam_item = QTreeWidgetItem(self.root)
+#             self.exam_item.setText(column,', '.join([str(exam.date),str(exam.modality),str(exam.description)]))
+            
+#             if exam.ignore == False and exam.baseline == False:
+#                 self.exam_item.setText(column+1,'No')
+#                 self.exam_item.setCheckState (column, QtCore.Qt.Checked)
+#             elif not(exam.ignore == False and exam.baseline == True):
+#                 self.exam_item.setText(column+1,'No')
+#                 self.exam_item.setCheckState (column, QtCore.Qt.Unchecked)
+#                 self.exam_item.setDisabled(True) #don't allow user to interact with item if these exams are to be ignored (prevents them from checking the box)
+#             else:
+#                 self.exam_item.setText(column+1,'Yes')
+
+#             for lesion in exam.lesions:
+#                 column = 2
+#                 if lesion.params['Target'].lower() == 'target' or lesion.params['Target'].lower() == 'non-target':
+#                     self.header_params = [
+#                                         lesion.params['Follow-Up'],
+#                                         lesion.params['Name'],
+#                                         lesion.params['Description'],
+#                                         lesion.params['Target'],
+#                                         lesion.params['Sub-Type'],
+#                                         lesion.params['Series'],
+#                                         lesion.params['Slice#'],
+#                                         round(lesion.params['RECIST Diameter (mm)']/10,1)
+#                                         ]        
+#                     self.lesion_item = QTreeWidgetItem(self.exam_item)
+#                     self.lesion_item.setCheckState(column,QtCore.Qt.Checked)
+#                     column += 1
+#                     for param_str in self.header_params:
+#                         self.lesion_item.setText(column,str(self.header_params[column-3]))
+#                         self.lesion_item.setTextAlignment(column,4) #align center of column
+#                         column += 1
+#                     self.lesion_item.setFlags(self.lesion_item.flags() | QtCore.Qt.ItemIsEditable)
