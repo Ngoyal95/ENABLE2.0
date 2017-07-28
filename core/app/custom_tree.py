@@ -2,14 +2,11 @@
 Custom tree class to display a patients data for editing
 '''
 import sys
-from PyQt5.QtWidgets import (QWidget, QTreeWidget, QTreeWidgetItem, QApplication, QVBoxLayout)
+from PyQt5.QtWidgets import (QWidget, QTreeWidget, QTreeWidgetItem, QApplication, QStackedLayout)
 from PyQt5 import QtCore,QtGui
 import core.app.BLDataClasses as BLDataClasses
 
 class PatientTree(QTreeWidget):
-    
-    #item_updated_signal = QtCore.pyqtSignal()
-    
     def __init__(self,pt):
         QWidget.__init__(self)
     
@@ -38,11 +35,11 @@ class PatientTree(QTreeWidget):
 
         self.tree.header().setResizeMode(QtGui.QHeaderView.ResizeToContents)
         self.tree.header().setStretchLastSection(False)
-        
-        layout = QVBoxLayout()
+    
+        layout = QStackedLayout()
         layout.addWidget(self.tree)
         self.setLayout(layout)
-
+    
     def addItems(self,parent,pt):
         '''
         Add items to the table from the patient object
@@ -51,7 +48,7 @@ class PatientTree(QTreeWidget):
             column = 0
             self.exam_item = QTreeWidgetItem(parent)
             self.exam_item.setText(column,', '.join([str(exam.date),str(exam.modality),str(exam.description)]))
-            
+
             if exam.ignore == False:
                 self.exam_item.setCheckState (column, QtCore.Qt.Checked)
             else:

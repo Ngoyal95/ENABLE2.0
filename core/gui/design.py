@@ -538,7 +538,7 @@ class Ui_mainWindow(object):
         mainWindow.setWindowTitle(_translate("mainWindow", "ENABLE 2.0"))
         self.tab.setToolTip(_translate("mainWindow", "<html><head/><body><p><br/></p></body></html>"))
         self.groupBox_3.setTitle(_translate("mainWindow", "Computations"))
-        self.modExamDates.setText(_translate("mainWindow", "Specify Exams (optional)"))
+        self.modExamDates.setText(_translate("mainWindow", "Edit Patient Data (Optional)"))
         self.btn_consult_recist_calcs.setText(_translate("mainWindow", "Perform RECIST Calculations"))
         self.groupBox_2.setTitle(_translate("mainWindow", "Database Upload"))
         self.databaseUploader.setText(_translate("mainWindow", "Uploader"))

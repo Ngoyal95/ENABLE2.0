@@ -13,7 +13,10 @@ def recist_computer(patient):
         for lesion in exam.lesions:
             #if lesion.params['Tool'].lower() == 'two diameters' or lesion.params['Tool'].lower() == 'line': #ignore any other type of segmentation
                 #Only Target and Non-Target lesions considered for summation
-            if lesion.params['RECIST Diameter (mm)'] is not None:
+            if (
+                lesion.include == True 
+                and lesion.params['RECIST Diameter (mm)'] is not None
+            ):
                 if lesion.params['RECIST Diameter (mm)'] is not None:
                     tsum += round(round(lesion.params['RECIST Diameter (mm)'],2)/10, 1)
                 else:

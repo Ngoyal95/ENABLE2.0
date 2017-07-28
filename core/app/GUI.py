@@ -31,29 +31,39 @@ import copy
 from PyQt5.QtWidgets import (QLineEdit, QProgressBar, QDialog, QTableView, 
                             QFileDialog, QAction, QApplication, QWidget, 
                             QPushButton, QMessageBox, QDesktopWidget, QMainWindow,
-                            QTreeWidget, QTreeWidgetItem
+                            QTreeWidget, QTreeWidgetItem, QItemDelegate
                             )
 from PyQt5 import QtCore, QtGui
 from pprint import pprint
+
+class MyDelegate(QItemDelegate):
+    '''
+    Custom delegate for the patient data viewing tree, used to prevent user from editing the first 3 columns of the tree
+    (the exam description, lesion follow-up, and lesion name)
+    '''
+    def createEditor(self, parent, option, index):
+        if index.column() not in {0,1,2}:
+            return super(MyDelegate,self).createEditor(parent,option,index)
+        return None
 
 class DataEntry(QDialog, data.Ui_Form):
     def __init__(self, parent):
         super(DataEntry,self).__init__(parent)
         self.setupUi(self) #setup the selection window
 
-        #### Initialize ####
         for key,patient in self.parent().StudyRoot.patients.items(): #note, StudyRoot belongs to form (main application window)
             if patient.ignore == False:
                 self.patientList.addItem(patient.name + ' - ' + key)
         
-        #### BUTTON FUNCTIONS ####
+        self.btn_set_params.setEnabled(False)
+        self.delegate = MyDelegate()
+
         self.returnToHome.clicked.connect(self.returnHome)
         self.patientList.itemClicked.connect(self.patientSelected)
         self.btn_set_baseline.clicked.connect(self.set_patient_baseline)
         self.btn_set_params.clicked.connect(self.set_patient_params)
         self.btn_reset.clicked.connect(self.reset)
-        
-    #### Functions ####
+
     def reset(self):
         self.temp_patient = self.parent().StudyRoot.patients[self.selkey]
         self.patientSelected()
@@ -63,14 +73,13 @@ class DataEntry(QDialog, data.Ui_Form):
         '''
         Set all exams prior to baseline to ignore = False
         '''
-        self.indexFind = re.compile(r'^\d{1,3}')
-        self.baseExamKey = int(self.indexFind.search(self.baselineExamSelect.currentText()).group())
-        
+        self.baseline_key = self.baselineExamSelect.currentIndex() + 1
+
         for key,exam in self.temp_patient.exams.items():
             exam.add_ignore(False)
             exam.add_baseline(False)
 
-        self.temp_patient.exams[self.baseExamKey].add_baseline(True) #set baseline
+        self.temp_patient.exams[self.baseline_key].add_baseline(True) #set baseline
 
         self.base_found = False
         for key,exam in self.temp_patient.exams.items():
@@ -86,6 +95,7 @@ class DataEntry(QDialog, data.Ui_Form):
         '''
         List exams for selected patient
         '''
+        self.btn_set_params.setEnabled(False)
         currPt = self.patientList.currentItem().text() #current patient string
         MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
         self.selkey = MRNSID.search(currPt).group() #selected patient
@@ -98,10 +108,12 @@ class DataEntry(QDialog, data.Ui_Form):
         
         self.baselineExamSelect.clear()
         self.baselineExamSelect.addItems(self.exams) #populate list
+        self.baselineExamSelect.setCurrentIndex(self.baselineExamSelect.count()-1) #display the oldest exam
         self.btn_set_baseline.setEnabled(True)
         self.populate_view()
 
     def returnHome(self):
+        self.set_patient_params()
         self.close()
 
     def populate_view(self):
@@ -117,14 +129,53 @@ class DataEntry(QDialog, data.Ui_Form):
         else:
             self.patient_tree = self.create_patient_tree()
             self.tree_container.addWidget(self.patient_tree)
-            
         self.patient_tree.itemChanged.connect(self.update_temp_patient_obj)
+        self.patient_tree.setItemDelegate(self.delegate) #custom delegate to prevent editing the first 3 columns
 
     def update_temp_patient_obj(self,item,col):
+        self.btn_set_params.setEnabled(True)
         ### Need to view exam item and then reflect the change in the self.temp_patient
-        print(item,col)
+        self.headers = [
+                        'Exam',
+                        'Baseline',
+                        'Inc.',
+                        'Follow-Up',
+                        'Name',
+                        'Description',
+                        'Target',
+                        'Sub-Type',
+                        'Series',
+                        'Slice#',
+                        'RECIST Diameter (mm)'
+                        ]
+        #col in the self.headers list -> use to access properties for update
+        self.data_in_item_col = item.text(col)
+        self.lesion_name = item.text(4)
+
+        if item.parent() is not None:
+            #lesion_item
+            self.parent_exam_date = item.parent().text(0).split(',')[0]
+            self.exam = next((x for key,x in self.temp_patient.exams.items() if x.date == self.parent_exam_date), None)
+            self.lesion = next((x for x in self.exam.lesions if x.params['Name'] == self.lesion_name), None) #find lesion obj w/ matching name
+            if col == 2:
+                #lesion included/excluded
+                #included by default
+                if not item.checkState(col) == QtCore.Qt.Checked:
+                    self.lesion.add_include(False) #exclude
+            else:
+                self.lesion.params[self.headers[col]] = self.data_in_item_col
+        else:
+            #exam_item
+            self.exam_date = item.text(0).split(',')[0]
+            self.exam = next((x for key,x in self.temp_patient.exams.items() if x.date == self.exam_date), None)
+            if item.checkState(col) == QtCore.Qt.Checked:
+                self.exam.add_ignore(False)
+            else:
+                self.exam.add_ignore(True)
 
     def set_patient_params(self):
+        self.temp_patient.course = str(self.pt_course.value())
+        self.temp_patient.day = str(self.pt_day.value())
         self.parent().StudyRoot.patients[self.selkey] = self.temp_patient
     
     def create_patient_tree(self):
@@ -134,9 +185,10 @@ class DataEntry(QDialog, data.Ui_Form):
         '''
         self.tree = QTreeWidget()
         self.root = self.tree.invisibleRootItem()
-        
         self.headers = [
                         'Exam',
+                        'Baseline',
+                        'Inc.',
                         'Follow-Up',
                         'Name',
                         'Description',
@@ -146,18 +198,13 @@ class DataEntry(QDialog, data.Ui_Form):
                         'Slice#',
                         'RECIST Diameter (cm)'
                         ]
-
         self.headers_item = QTreeWidgetItem(self.headers)
-
         self.tree.setColumnCount(len(self.headers))
         self.tree.setHeaderItem(self.headers_item)
         self.root.setExpanded(True)
-
         self.addItems()
-
         self.tree.header().setResizeMode(QtGui.QHeaderView.ResizeToContents)
         self.tree.header().setStretchLastSection(False)
-    
         return self.tree
 
     def addItems(self):
@@ -170,16 +217,20 @@ class DataEntry(QDialog, data.Ui_Form):
             self.exam_item = QTreeWidgetItem(self.root)
             self.exam_item.setText(column,', '.join([str(exam.date),str(exam.modality),str(exam.description)]))
             
-            if exam.ignore == False:
+            if exam.ignore == False and exam.baseline == False:
+                self.exam_item.setText(column+1,'No')
                 self.exam_item.setCheckState (column, QtCore.Qt.Checked)
-            else:
+            elif not(exam.ignore == False and exam.baseline == True):
+                self.exam_item.setText(column+1,'No')
                 self.exam_item.setCheckState (column, QtCore.Qt.Unchecked)
                 self.exam_item.setDisabled(True) #don't allow user to interact with item if these exams are to be ignored (prevents them from checking the box)
+            else:
+                self.exam_item.setText(column+1,'Yes')
 
             for lesion in exam.lesions:
-                column = 1
+                column = 2
                 if lesion.params['Target'].lower() == 'target' or lesion.params['Target'].lower() == 'non-target':
-                    self.param_list = [
+                    self.header_params = [
                                         lesion.params['Follow-Up'],
                                         lesion.params['Name'],
                                         lesion.params['Description'],
@@ -191,8 +242,9 @@ class DataEntry(QDialog, data.Ui_Form):
                                         ]        
                     self.lesion_item = QTreeWidgetItem(self.exam_item)
                     self.lesion_item.setCheckState(column,QtCore.Qt.Checked)
-                    for param_str in self.param_list:
-                        self.lesion_item.setText(column,str(self.param_list[column-1]))
+                    column += 1
+                    for param_str in self.header_params:
+                        self.lesion_item.setText(column,str(self.header_params[column-3]))
                         self.lesion_item.setTextAlignment(column,4) #align center of column
                         column += 1
                     self.lesion_item.setFlags(self.lesion_item.flags() | QtCore.Qt.ItemIsEditable)

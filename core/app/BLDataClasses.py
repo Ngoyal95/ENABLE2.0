@@ -151,7 +151,11 @@ class Lesion:
     '''
     def __init__(self):
         self.newlesion = False #False unless set to True
+        self.include = True #indicates if target/non-target lesion should be used for calculations
         self.params = {} #dictionary of parameters, populated according to the column names present in the Bookmark List
+
+    def add_include(self,include):
+        self.include = include
 
     def add_newlesion(self, newlesion):
         self.newlesion = newlesion #set to True if new lesion found
