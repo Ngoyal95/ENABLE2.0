@@ -688,10 +688,8 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             flag = 1 #no imports
 
         if flag == 0:
-            #bl_import(self.df,self.OriginalRoot,self.dirName,self.baseNames)
-            
-            multi_process_import(self.df,self.OriginalRoot,self.dirName,self.baseNames)
-            
+            bl_import(self.df,self.OriginalRoot,self.dirName,self.baseNames)
+                    
             for key,patient in self.OriginalRoot.patients.items():
                 self.patientList.addItem(patient.name + ' - ' + key)
             

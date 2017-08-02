@@ -322,6 +322,11 @@ def multi_process_import(df,root,dirName,baseNames):
         pt = out_q.get()
         key = pt.mrn + '/' + pt.study_protocol
         root.patients[key] = pt
+    
+    for p in procs:
+        p.join()
+
+    return root
 
     #results = Pool(len(baseNames)).map(partial(single_bl_import,dirName),baseNames) #list of patient objects
 
