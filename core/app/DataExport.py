@@ -131,7 +131,7 @@ def waterfallPlot(StudyRoot):
 
 def spiderPlot(StudyRoot):
     '''
-    Return data for spider plot, dict of patients with values as tuple w/ format (lists of their target RECIST sum,weeks from baseline,days from baseline)
+    Return data for spider plot, dict of patients with values as list w/ format [lists of their target RECIST sum,weeks from baseline,days from baseline)
     '''
     ptData = {}
     popPat = False
@@ -155,7 +155,7 @@ def spiderPlot(StudyRoot):
                     #QMessageBox.warning(None,'Error!','Could not compute percent change for patient: ' + patient.name + '\nError due to baseline sum = 0')
             if popPat == False:
                 ptData[key] = [meas,deltaTW,deltaTD]
-    
+            
     return ptData
 
 def swimmerPlot(StudyRoot):
@@ -203,6 +203,17 @@ def exportPlotData(StudyRoot,OutDir):
         row+=1
 
     #### ---- Spider ---- ####
+    pt_data_dict = spiderPlot(StudyRoot)
+    SPIDER = dataWb.create_sheet("Spider_Data")
+    col = 1
+    for key,patient in StudyRoot.patients.items():
+        pt_id = key
+        pt_data = pt_data_dict[key]
+        for i in range(0,len(pt_data[0])):
+            SPIDER.cell(row = i+1, column = col).value = pt_data[0][i]
+            SPIDER.cell(row = i+1, column = col+1).value = pt_data[1][i]
+        col+=3
+    
     #### ---- Swimmer ---- ####
 
     try:
