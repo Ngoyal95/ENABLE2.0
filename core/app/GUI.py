@@ -7,7 +7,7 @@ import core.gui.uploader as uploader #database upload page
 import core.gui.login as login #login page
 import core.gui.config as config
 import core.app.BLDataClasses as BLDataClasses
-from core.app.BLImportFunctions import bl_import
+from core.app.BLImportFunctions import bl_import, multi_process_import
 from core.app.RECISTComp import recist_computer
 from core.app.RECISTGen import generate_recist_sheets
 from core.app.DataExport import exportToExcel, waterfallPlot, spiderPlot, exportPlotData, exportToLog
@@ -688,7 +688,10 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             flag = 1 #no imports
 
         if flag == 0:
-            bl_import(self.df,self.OriginalRoot,self.dirName,self.baseNames)
+            #bl_import(self.df,self.OriginalRoot,self.dirName,self.baseNames)
+            
+            multi_process_import(self.df,self.OriginalRoot,self.dirName,self.baseNames)
+            
             for key,patient in self.OriginalRoot.patients.items():
                 self.patientList.addItem(patient.name + ' - ' + key)
             
