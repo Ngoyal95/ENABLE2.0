@@ -7,7 +7,7 @@ import core.gui.uploader as uploader #database upload page
 import core.gui.login as login #login page
 import core.gui.config as config
 import core.app.BLDataClasses as BLDataClasses
-from core.app.BLImportFunctions import bl_import, multi_process_import
+from core.app.BLImportFunctions import bl_import
 from core.app.RECISTComp import recist_computer
 from core.app.RECISTGen import generate_recist_sheets
 from core.app.DataExport import exportToExcel, waterfallPlot, spiderPlot, exportPlotData, exportToLog
@@ -794,10 +794,14 @@ class ConfigurationPage(QDialog, config.Ui_configuration):
         shelfFile['RECISTDir'] = os.path.dirname(os.path.realpath('./files/RECISTForm.docx'))
         shelfFile['LMUploader'] = os.path.dirname(os.path.realpath('./files/RadiologyImportClient.jar'))
         shelfFile['mongodb_address'] = 'mongodb://db.patients.net'
-        
+        #shelfFile['Units'] = self.combo_measurement_unit.currentText()
+        #shelfFile['Decimals'] = self.combo_number_decimals.currentText()
+
         try:
             self.bl_directory.setText(shelfFile['BLDir'])
             self.output_directory.setText(shelfFile['OutDir'])
+            self.combo_measurement_unit.setCurrentText(shelfFile['Units'])
+            self.combo_number_decimals.setCurrentText(shelfFile['Decimals'])
             shelfFile.close()
         except Exception as e:
             #KeyError thrown if launched without the shelve files existing.
@@ -809,6 +813,8 @@ class ConfigurationPage(QDialog, config.Ui_configuration):
         self.btn_output_directory.clicked.connect(self.output_directory_select)
         self.btn_db_path.clicked.connect(self.set_db_address)
         self.admin_pass.textChanged.connect(self.admin_pass_check)
+        self.combo_measurement_unit.currentIndexChanged.connect(self.gen_setting)
+        self.combo_number_decimals.currentIndexChanged.connect(self.gen_setting)
         
         self.show()
 
@@ -851,6 +857,7 @@ class ConfigurationPage(QDialog, config.Ui_configuration):
         self.boolVal = bool(self.entered_pass == '719b6d1c52edbb355a8e9f8c0ada6ad4')
         self.db_path.setEnabled(self.boolVal)
         self.btn_db_path.setEnabled(self.boolVal)
+        self.combo_measurement_unit.setEnabled(self.boolVal)
 
     def set_db_address(self):
         shelfFile = shelve.open('LocalPreferences')
@@ -860,6 +867,13 @@ class ConfigurationPage(QDialog, config.Ui_configuration):
             self.admin_pass.clear()
             self.db_path.setEnabled(False)
             self.btn_db_path.setEnabled(False)  
+        shelfFile.close()
+
+    def gen_setting(self):
+        print('Trig')
+        shelfFile = shelve.open('LocalPreferences')
+        shelfFile['Decimals'] = self.combo_number_decimals.currentText()
+        shelfFile['Units'] = self.combo_measurement_unit.currentText()
         shelfFile.close()
 
 def kill_proc_tree(pid, including_parent=True):    
