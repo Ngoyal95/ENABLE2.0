@@ -260,7 +260,6 @@ class DataEntry(QDialog, data.Ui_Form):
         '''
         Add items to the table from the patient object
         '''
-        self.temp_patient
         for key,exam in self.temp_patient.exams.items():
             column = 0
             self.exam_item = QTreeWidgetItem(self.root)

@@ -81,9 +81,9 @@ def recist_sheet(RECISTDir, OutDir, patient, exam):
 
     #### RESPONSE DATA ####
     table = template.tables[3]
-    table.cell(0,1).text = str(exam.trecistsum)
-    table.cell(1,1).text = str(patient.baselinesum)
-    table.cell(2,1).text = str(patient.bestresponse)
+    table.cell(0,1).text = str(round(exam.trecistsum,1))
+    table.cell(1,1).text = str(round(patient.baselinesum,1))
+    table.cell(2,1).text = str(round(patient.bestresponse,1))
     table.cell(3,1).text = str(exam.tfrombestresponse)
     table.cell(4,1).text = str(exam.tfrombaseline)
     table.cell(5,1).text = exam.tresponse
