@@ -7,11 +7,13 @@ import core.gui.uploader as uploader #database upload page
 import core.gui.login as login #login page
 import core.gui.config as config
 import core.app.BLDataClasses as BLDataClasses
+
 from core.app.BLImportFunctions import bl_import
 from core.app.RECISTComp import recist_computer
 from core.app.RECISTGen import generate_recist_sheets
 from core.app.DataExport import exportToExcel, waterfallPlot, spiderPlot, exportPlotData, exportToLog
 from core.app.backend_interface import patient_uploader_func, pull_patient_list_from_mongodb, pull_patients_from_mongodb
+from core.customwidgets.plot_widget import Plotter
 
 import pandas as pd
 import shelve
@@ -374,6 +376,14 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.search_lineedit.setClearButtonEnabled(True)
         self.btn_dont_load_selected_patient.clicked.connect(self.dont_load_selected_patient)
         self.btn_unload_all_patients.clicked.connect(self.unload_all_patients)
+
+        #### UOB TEST PAGE ####
+        self.uob_list.itemClicked.connect(self.uob_pt_selected)
+        self.plotter = Plotter(self)
+        self.uob_plot_container.addWidget(self.plotter)
+        self.btn_hu_vs_time.clicked.connect(self.plot_hu_vs_time)
+        self.btn_size_vs_time.clicked.connect(self.plot_size_vs_time)
+        self.btn_target_sum_vs_time.clicked.connect(self.plot_target_dia_vs_time)
         
     #### Signal Functions ####
     def recist_cal_with_fetchroot(self):
@@ -633,6 +643,72 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.combobox_patient_search.setCurrentText(signal.text())
     def clear_combobox_lineedit(self):
         self.search_lineedit.clear()
+
+    #### UOB TEST TAB FUNCTIONS ####
+    def load_uob_list(self):
+        self.uob_list.clear()
+        for key in self.StudyRoot.patients.keys():
+            print(key)
+            self.uob_list.addItem(self.StudyRoot.patients[key].name + ' - '+ key)
+
+    def uob_pt_selected(self):
+        self.btn_hu_vs_time.setEnabled(True)
+        self.btn_size_vs_time.setEnabled(True)
+        self.btn_target_sum_vs_time.setEnabled(True)
+
+    def plot_size_vs_time(self):
+        currPt = self.uob_list.currentItem().text() #current patient string
+        MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
+        self.selkey = MRNSID.search(currPt).group() #selected patient
+
+        self.temp_patient = self.StudyRoot.patients[self.selkey] #temp patient for updating values
+        num_exams = len(self.temp_patient.exams.keys())
+        y_vals = []
+        x_vals = [x for x in range(1,num_exams+1)]
+        for i in range(num_exams,0,-1):
+            exam = self.temp_patient.exams[i]
+            temp_y_array = []
+            for lesion in exam.lesions:
+                if lesion.params['Target'].lower() == 'target':
+                    temp_y_array.append(round(lesion.params['RECIST Diameter (mm)']/10,1))
+            y_vals.append(temp_y_array)
+
+        self.plotter.plot_this(x_vals,y_vals,'Tumor size vs. time','Time','Target lesion diameters')
+
+    def plot_hu_vs_time(self):
+        currPt = self.uob_list.currentItem().text() #current patient string
+        MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
+        self.selkey = MRNSID.search(currPt).group() #selected patient
+
+        self.temp_patient = self.StudyRoot.patients[self.selkey] #temp patient for updating values
+        num_exams = len(self.temp_patient.exams.keys())
+        y_vals = []
+        x_vals = [x for x in range(1,num_exams+1)]
+        for i in range(num_exams,0,-1):
+            exam = self.temp_patient.exams[i]
+            temp_y_array = []
+            for lesion in exam.lesions:
+                if lesion.params['Target'].lower() == 'target':
+                    temp_y_array.append(round(lesion.params['HU Mean (HU)'],2))
+            y_vals.append(temp_y_array)
+
+        self.plotter.plot_this(x_vals,y_vals,'Lesion HU Mean vs. time','Time','Lesion HU Mean')
+
+    def plot_target_dia_vs_time(self):
+        currPt = self.uob_list.currentItem().text() #current patient string
+        MRNSID = re.compile(r'\d{7}/\w{2}-\w-\w{4}')
+        self.selkey = MRNSID.search(currPt).group() #selected patient
+
+        self.temp_patient = self.StudyRoot.patients[self.selkey] #temp patient for updating values
+        num_exams = len(self.temp_patient.exams.keys())
+        y_vals = []
+        x_vals = [x for x in range(1,num_exams+1)]
+        for i in range(num_exams,0,-1):
+            exam = self.temp_patient.exams[i]
+            y_vals.append(exam.trecistsum)
+
+        self.plotter.plot_this(x_vals,y_vals,'Target RECIST sum vs. time','Time','Sum of Diameters (cm)')
+
     #### Shared Computational/Operation Functions ####
     def recistCalculations(self,signal):
         #perform recist calculations by passing each patient in self.root_to_use to the recist_computer() function
@@ -702,6 +778,9 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
             self.statusbar.clearMessage()
 
         self.StudyRoot = copy.deepcopy(self.OriginalRoot) #use a copy for all further computations and operations
+        
+        ###UOB TEST
+        self.load_uob_list()
 
     def genRECIST(self,signal):
         if signal == True:
