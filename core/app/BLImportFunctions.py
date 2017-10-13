@@ -6,9 +6,6 @@ import core.app.BLDataClasses as BLDataClasses
 import re
 import xlrd
 import queue
-from multiprocessing import Pool
-import multiprocessing as mp
-from functools import partial
 from pprint import pprint
 
 def bl_import(df, root, dirName, baseNames):
@@ -45,12 +42,6 @@ def bl_import(df, root, dirName, baseNames):
         extractData(dTemp,key,root,columnNames_Update)
         df[key] = dTemp #append the BL to the overall dict of BL tables
     pd.DataFrame(df[key])
-
-
-
-
-        
-
 
 def drop_df_rows(df):
     NLcheck = re.compile('\s+new lesion\s+|\snl\s+', re.IGNORECASE)

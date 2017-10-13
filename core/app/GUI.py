@@ -851,6 +851,7 @@ class ENABLELoginWindow(QDialog, login.Ui_logindialog):
 
     def run_offline_mode(self):
         self.connecting_label.setText('Launching in Offline Mode.')
+        self.loginSignal.emit(True)
 
     def closeEvent(self,event):
         self.closeSignal.emit(True)
