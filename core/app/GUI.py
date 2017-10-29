@@ -358,24 +358,25 @@ class MainWindow(QMainWindow, design.Ui_mainWindow):
         self.btn_load_patients_from_db.clicked.connect(self.import_patients_from_db)
         self.btn_clinical_generate_recist.clicked.connect(self.recist_sheet_with_fetchrot)
         self.btn_clinical_recist_calcs.clicked.connect(self.recist_cal_with_fetchroot)
+        
+        #### DATABASE FUNCTIONALITY - TEMPORARILY REMOVED ####
+        # self.database_list = pull_patient_list_from_mongodb()
+        # self.search_list = []
+        # for i in range(0,len(self.database_list[0])):
+        #     self.list_available_patients.addItem(self.database_list[0][i] + ' - ' + self.database_list[1][i] + '/' + self.database_list[2][i])
+        #     self.search_list.append(self.database_list[0][i] + ' - ' + self.database_list[1][i] + '/' + self.database_list[2][i])
 
-        self.database_list = pull_patient_list_from_mongodb()
-        self.search_list = []
-        for i in range(0,len(self.database_list[0])):
-            self.list_available_patients.addItem(self.database_list[0][i] + ' - ' + self.database_list[1][i] + '/' + self.database_list[2][i])
-            self.search_list.append(self.database_list[0][i] + ' - ' + self.database_list[1][i] + '/' + self.database_list[2][i])
-
-        self.search_lineedit = QLineEdit()
-        self.combobox_patient_search.setLineEdit(self.search_lineedit)
-        self.completer = QtGui.QCompleter(self.search_list,self)
-        self.completer.setCompletionMode(QtGui.QCompleter.PopupCompletion)
-        self.completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        self.combobox_patient_search.setCompleter(self.completer)
-        self.btn_add_patient_to_load.clicked.connect(self.add_patient_selected)
-        self.list_available_patients.itemClicked.connect(self.update_combobox_lineedit) #if patient in list is clicked, update search_lineedit
-        self.search_lineedit.setClearButtonEnabled(True)
-        self.btn_dont_load_selected_patient.clicked.connect(self.dont_load_selected_patient)
-        self.btn_unload_all_patients.clicked.connect(self.unload_all_patients)
+        # self.search_lineedit = QLineEdit()
+        # self.combobox_patient_search.setLineEdit(self.search_lineedit)
+        # self.completer = QtGui.QCompleter(self.search_list,self)
+        # self.completer.setCompletionMode(QtGui.QCompleter.PopupCompletion)
+        # self.completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        # self.combobox_patient_search.setCompleter(self.completer)
+        # self.btn_add_patient_to_load.clicked.connect(self.add_patient_selected)
+        # self.list_available_patients.itemClicked.connect(self.update_combobox_lineedit) #if patient in list is clicked, update search_lineedit
+        # self.search_lineedit.setClearButtonEnabled(True)
+        # self.btn_dont_load_selected_patient.clicked.connect(self.dont_load_selected_patient)
+        # self.btn_unload_all_patients.clicked.connect(self.unload_all_patients)
 
         #### UOB TEST PAGE ####
         self.uob_list.itemClicked.connect(self.uob_pt_selected)
@@ -828,26 +829,27 @@ class ENABLELoginWindow(QDialog, login.Ui_logindialog):
         self.show()
         
     def run_login(self):
-        self.actual_name = win32api.GetUserNameEx(3) #actual name of the user
-        #self.user_info = win32net.NetUserGetInfo (win32net.NetGetAnyDCName (), win32api.GetUserName (), 1) #returns dict, use field 'home_dir' to find 'nih.gov'
-        if self.actual_name is not None:
-            self.welcome_label.setText('Welcome ' + self.actual_name)
-        if 'nih' in self.actual_name.lower():
-            try: #open connecting for availability test
-                client = pymongo.MongoClient(serverSelectionTimeoutMS=30) #timeout after 30ms connect attempt
-                client.server_info() # force connection on a request, err if no server available
-                client.close()
-                self.connecting_label.setText('Connection established! Launching ENABLE 2.0.')
-                self.loginSignal.emit(True)
-            except pymongo.errors.ServerSelectionTimeoutError as err:
-                self.count += 1
-                self.btn_log_in.setText('Retry')
-                self.count_label.setText('Attempt...'+ str(self.count))
-                self.connecting_label.setText('Server unavailable. Retry or use Offline Mode.')
-                print(err)
-                traceback.print_exc()
-        else:
-            self.connecting_label.setText('Unauthorized user. Please contact administrator')
+        self.loginSignal.emit(True)
+        # self.actual_name = win32api.GetUserNameEx(3) #actual name of the user
+        # #self.user_info = win32net.NetUserGetInfo (win32net.NetGetAnyDCName (), win32api.GetUserName (), 1) #returns dict, use field 'home_dir' to find 'nih.gov'
+        # if self.actual_name is not None:
+        #     self.welcome_label.setText('Welcome ' + self.actual_name)
+        # if 'nih' in self.actual_name.lower():
+        #     try: #open connecting for availability test
+        #         client = pymongo.MongoClient(serverSelectionTimeoutMS=30) #timeout after 30ms connect attempt
+        #         client.server_info() # force connection on a request, err if no server available
+        #         client.close()
+        #         self.connecting_label.setText('Connection established! Launching ENABLE 2.0.')
+        #         self.loginSignal.emit(True)
+        #     except pymongo.errors.ServerSelectionTimeoutError as err:
+        #         self.count += 1
+        #         self.btn_log_in.setText('Retry')
+        #         self.count_label.setText('Attempt...'+ str(self.count))
+        #         self.connecting_label.setText('Server unavailable. Retry or use Offline Mode.')
+        #         print(err)
+        #         traceback.print_exc()
+        # else:
+        #     self.connecting_label.setText('Unauthorized user. Please contact administrator')
 
     def run_offline_mode(self):
         self.connecting_label.setText('Launching in Offline Mode.')
